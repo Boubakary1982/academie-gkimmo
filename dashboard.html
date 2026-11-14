@@ -1,48 +1,391 @@
 <!DOCTYPE html>
-<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mon espace apprenant | API-GKIMMO</title>
+
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#faf8f2;color:#29251f;line-height:1.55}
-header{background:#38231f;color:white;padding:16px 6%;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.logo{font-weight:bold;color:#e8c77c}.logo small{display:block;color:white;font-size:10px;letter-spacing:1.3px}
-.actions{display:flex;gap:10px}.actions a,.actions button{color:white;background:transparent;border:1px solid #bda17d;border-radius:5px;padding:9px 12px;text-decoration:none;font-size:13px;cursor:pointer}
-main{max-width:1100px;margin:32px auto;padding:0 18px}.welcome{background:linear-gradient(120deg,#38231f,#684632);color:white;padding:28px;border-radius:12px;margin-bottom:22px}
-.welcome .eyebrow{color:#e8c77c;font-size:12px;font-weight:bold;letter-spacing:1.5px}.welcome h1{margin:8px 0;font-size:clamp(25px,4vw,36px)}.welcome p{margin:0;color:#f0e8df}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:20px 0}.card,.course{background:#fff;border:1px solid #eee5d9;border-radius:10px;padding:20px}
-.card h2,.course h3{color:#513529;margin:0 0 9px}.card p,.course p{color:#766d65;font-size:14px;margin:0 0 8px}
-.kicker{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#8a6b43;font-weight:bold;margin-bottom:7px}
-.section-title{margin:30px 0 12px;color:#432c23}.course-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
-.pill{display:inline-block;background:#f3ead8;color:#72512c;padding:4px 9px;border-radius:20px;font-size:11px;margin-bottom:9px}
-.notice{padding:13px 15px;border-radius:7px;background:#f3ead8;color:#513529;font-size:14px;margin:14px 0}.error{background:#fce8e6;color:#8b2118}
-.muted{font-size:12px;color:#766d65;margin-top:25px}
-</style></head><body>
-<header><div class="logo">API-GKIMMO<small>ESPACE APPRENANT</small></div><div class="actions"><a href="index.html">Accueil du site</a><button id="logoutBtn" type="button">Déconnexion</button></div></header>
-<main>
-<section class="welcome"><div class="eyebrow">VOTRE PARCOURS DE FORMATION</div><h1>Bienvenue, <span id="learnerName">apprenant</span> !</h1><p>Retrouvez ici les premières informations de votre espace personnel API-GKIMMO.</p></section>
-<div class="grid">
-<section class="card"><div class="kicker">Mon profil</div><h2 id="profileName">Chargement…</h2><p id="profileEmail"></p></section>
-<section class="card"><div class="kicker">Mes formations</div><h2>Votre parcours</h2><p>Vos inscriptions et votre progression seront affichées ici dès l'activation du module pédagogique.</p></section>
-<section class="card"><div class="kicker">Mes certificats</div><h2>À venir</h2><p>Les attestations et certificats seront accessibles après la mise en place des évaluations.</p></section>
-</div>
-<h2 class="section-title">Catalogue des formations</h2><div id="courseMessage" class="notice">Chargement du catalogue…</div><div id="courseList" class="course-list"></div>
-<p class="muted">Version initiale du tableau de bord. Les inscriptions, le suivi des leçons, les évaluations et les certificats seront activés après vérification des autorisations d'accès à la base de données.</p>
-</main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
-const SUPABASE_URL="https://uhrmfqsrxnmrdfiwcazm.supabase.co";
-const SUPABASE_ANON_KEY="sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-async function startDashboard(){
- const {data:{session},error:sessionError}=await sb.auth.getSession();
- if(sessionError||!session){window.location.replace("auth.html");return;}
- const user=session.user;const name=user.user_metadata?.full_name||user.email?.split("@")[0]||"apprenant";
- document.getElementById("learnerName").textContent=name;document.getElementById("profileName").textContent=name;document.getElementById("profileEmail").textContent=user.email||"";
- const msg=document.getElementById("courseMessage"),list=document.getElementById("courseList");
- const {data:courses,error}=await sb.from("courses").select("id,title,description,category,price").eq("is_published",true).order("title",{ascending:true});
- if(error){msg.textContent="Le catalogue n'est pas encore accessible. Les autorisations de lecture des cours doivent être vérifiées dans Supabase avant son affichage.";msg.className="notice error";return;}
- if(!courses||courses.length===0){msg.textContent="Aucune formation publiée pour le moment. Les formations apparaîtront ici dès leur publication par l'administration.";return;}
- msg.hidden=true;
- courses.forEach(c=>{const a=document.createElement("article");a.className="course";const tag=document.createElement("span");tag.className="pill";tag.textContent=c.category||"Formation";const h=document.createElement("h3");h.textContent=c.title||"Formation sans titre";const d=document.createElement("p");d.textContent=c.description||"Description à venir.";const price=document.createElement("p");price.textContent=c.price?"Tarif : "+c.price+" FCFA":"Tarif à préciser";a.append(tag,h,d,price);list.appendChild(a);});
+* {
+  box-sizing: border-box;
 }
-document.getElementById("logoutBtn").addEventListener("click",async()=>{const {error}=await sb.auth.signOut();if(error){alert("La déconnexion n'a pas abouti. Veuillez réessayer.");return;}window.location.replace("auth.html");});
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #faf8f2;
+  color: #29251f;
+  line-height: 1.55;
+}
+
+header {
+  background: #38231f;
+  color: white;
+  padding: 16px 6%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.logo {
+  font-weight: bold;
+  color: #e8c77c;
+}
+
+.logo small {
+  display: block;
+  color: white;
+  font-size: 10px;
+  letter-spacing: 1.3px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.actions a,
+.actions button {
+  color: white;
+  background: transparent;
+  border: 1px solid #bda17d;
+  border-radius: 5px;
+  padding: 9px 12px;
+  text-decoration: none;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+main {
+  max-width: 1100px;
+  margin: 32px auto;
+  padding: 0 18px;
+}
+
+.welcome {
+  background: linear-gradient(120deg, #38231f, #684632);
+  color: white;
+  padding: 28px;
+  border-radius: 12px;
+  margin-bottom: 22px;
+}
+
+.welcome .eyebrow {
+  color: #e8c77c;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 1.5px;
+}
+
+.welcome h1 {
+  margin: 8px 0;
+  font-size: clamp(25px, 4vw, 36px);
+}
+
+.welcome p {
+  margin: 0;
+  color: #f0e8df;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.card,
+.course {
+  background: white;
+  border: 1px solid #eee5d9;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.card h2,
+.course h3 {
+  color: #513529;
+  margin: 0 0 9px;
+}
+
+.card p,
+.course p {
+  color: #766d65;
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+.kicker {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #8a6b43;
+  font-weight: bold;
+  margin-bottom: 7px;
+}
+
+.section-title {
+  margin: 30px 0 12px;
+  color: #432c23;
+}
+
+.course-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.pill {
+  display: inline-block;
+  background: #f3ead8;
+  color: #72512c;
+  padding: 4px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  margin-bottom: 9px;
+}
+
+.notice {
+  padding: 13px 15px;
+  border-radius: 7px;
+  background: #f3ead8;
+  color: #513529;
+  font-size: 14px;
+  margin: 14px 0;
+}
+
+.error {
+  background: #fce8e6;
+  color: #8b2118;
+}
+
+.muted {
+  font-size: 12px;
+  color: #766d65;
+  margin-top: 25px;
+}
+
+[hidden] {
+  display: none !important;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">
+    API-GKIMMO
+    <small>ESPACE APPRENANT</small>
+  </div>
+
+  <div class="actions">
+    <a href="index.html">Accueil du site</a>
+    <button id="logoutBtn" type="button">Déconnexion</button>
+  </div>
+</header>
+
+<main>
+
+  <section class="welcome">
+    <div class="eyebrow">VOTRE PARCOURS DE FORMATION</div>
+
+    <h1>
+      Bienvenue,
+      <span id="learnerName">apprenant</span> !
+    </h1>
+
+    <p>
+      Retrouvez ici les premières informations de votre espace personnel API-GKIMMO.
+    </p>
+  </section>
+
+  <div class="grid">
+
+    <section class="card">
+      <div class="kicker">Mon profil</div>
+      <h2 id="profileName">Chargement…</h2>
+      <p id="profileEmail"></p>
+    </section>
+
+    <section class="card">
+      <div class="kicker">Mes formations</div>
+      <h2>Votre parcours</h2>
+      <p>
+        Vos inscriptions et votre progression seront affichées ici
+        dès l'activation du module pédagogique.
+      </p>
+    </section>
+
+    <section class="card">
+      <div class="kicker">Mes certificats</div>
+      <h2>À venir</h2>
+      <p>
+        Les attestations et certificats seront accessibles après
+        la mise en place des évaluations.
+      </p>
+    </section>
+
+  </div>
+
+  <h2 class="section-title">Catalogue des formations</h2>
+
+  <div id="courseMessage" class="notice">
+    Chargement du catalogue…
+  </div>
+
+  <div id="courseList" class="course-list"></div>
+
+  <p class="muted">
+    Version initiale du tableau de bord.
+    Les inscriptions, le suivi des leçons, les évaluations et les certificats
+    seront activés dans les prochaines étapes.
+  </p>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+
+const SUPABASE_URL =
+"https://uhrmfqsrxnmrdfiwcazm.supabase.co";
+
+const SUPABASE_ANON_KEY =
+"sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
+
+const sb = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+
+async function startDashboard() {
+
+  const {
+    data: { session },
+    error: sessionError
+  } = await sb.auth.getSession();
+
+  if (sessionError || !session) {
+    window.location.replace("auth.html");
+    return;
+  }
+
+  const user = session.user;
+
+  const name =
+    user.user_metadata?.full_name ||
+    user.email?.split("@")[0] ||
+    "apprenant";
+
+  document.getElementById("learnerName").textContent = name;
+
+  document.getElementById("profileName").textContent = name;
+
+  document.getElementById("profileEmail").textContent =
+    user.email || "";
+
+  const msg = document.getElementById("courseMessage");
+
+  const list = document.getElementById("courseList");
+
+  try {
+
+    const {
+      data: courses,
+      error
+    } = await sb
+      .from("courses")
+      .select("id,title,description,category,price")
+      .eq("status", "published")
+      .order("title", { ascending: true });
+
+    if (error) {
+      console.error("Erreur catalogue :", error);
+
+      msg.textContent =
+        "Impossible de charger le catalogue pour le moment. Vérifiez les autorisations Supabase.";
+
+      msg.className = "notice error";
+      return;
+    }
+
+    if (!courses || courses.length === 0) {
+
+      msg.textContent =
+        "Aucune formation publiée pour le moment. Les formations apparaîtront ici après leur publication par l'administration.";
+
+      return;
+    }
+
+    msg.hidden = true;
+
+    courses.forEach(course => {
+
+      const article = document.createElement("article");
+      article.className = "course";
+
+      const category = document.createElement("span");
+      category.className = "pill";
+      category.textContent = course.category || "Formation";
+
+      const title = document.createElement("h3");
+      title.textContent = course.title || "Formation sans titre";
+
+      const description = document.createElement("p");
+      description.textContent =
+        course.description || "Description à venir.";
+
+      const price = document.createElement("p");
+
+      price.textContent =
+        course.price !== null && course.price !== undefined
+          ? "Tarif : " + course.price + " FCFA"
+          : "Tarif à préciser";
+
+      article.append(
+        category,
+        title,
+        description,
+        price
+      );
+
+      list.appendChild(article);
+
+    });
+
+  } catch (error) {
+
+    console.error("Erreur inattendue :", error);
+
+    msg.textContent =
+      "Une erreur technique empêche actuellement le chargement du catalogue.";
+
+    msg.className = "notice error";
+  }
+
+}
+
+document
+  .getElementById("logoutBtn")
+  .addEventListener("click", async () => {
+
+    const { error } = await sb.auth.signOut();
+
+    if (error) {
+      alert("La déconnexion n'a pas abouti. Veuillez réessayer.");
+      return;
+    }
+
+    window.location.replace("auth.html");
+
+  });
+
 startDashboard();
-</script></body></html>
+
+</script>
+
+</body>
+</html>
