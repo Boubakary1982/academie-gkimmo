@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administration | API-GKIMMO</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f5f3ee;color:#302820}
+header{background:#38231f;color:white;padding:18px 6%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+header strong{font-size:19px}
+header button{background:#d6ad60;color:#302820;border:0;padding:10px 16px;border-radius:6px;cursor:pointer;font-weight:bold}
+main{max-width:1100px;margin:30px auto;padding:0 18px}
+h1{color:#432c23}
+.subtitle{color:#766d65}
+.welcome,.panel{background:white;border:1px solid #e9e2d8;border-radius:12px;padding:22px;margin-bottom:20px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin:20px 0}
+.stat{background:white;border:1px solid #e9e2d8;border-radius:10px;padding:18px}
+.stat span{display:block;color:#766d65;font-size:14px}
+.stat strong{display:block;font-size:28px;color:#76502d;margin-top:8px}
+h2{font-size:19px;color:#432c23}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:12px;border-bottom:1px solid #eee;font-size:14px}
+th{background:#f8f5ef}
+.status{padding:12px;border-radius:7px;background:#f3ead8;color:#5b4428;margin:15px 0}
+.error{background:#fce8e6;color:#8b2118}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.actions a{display:inline-block;background:#38231f;color:white;padding:11px 15px;border-radius:6px;text-decoration:none}
+footer{text-align:center;color:#766d65;padding:25px}
+@media(max-width:600px){th,td{padding:9px 6px;font-size:12px}}
+</style>
+</head>
+<body>
+
+<header>
+<strong>API-GKIMMO | Administration</strong>
+<button id="logoutBtn">Déconnexion</button>
+</header>
+
+<main>
+<section class="welcome">
+<h1>Tableau de bord GKIMMO</h1>
+<p class="subtitle">Administration de l'Académie Professionnelle de l'Immobilier.</p>
+<p id="adminName">Vérification de votre compte...</p>
+<div id="message" class="status">Chargement des données...</div>
+</section>
+
+<section class="stats">
+<div class="stat"><span>Formations</span><strong id="coursesCount">—</strong></div>
+<div class="stat"><span>Modules</span><strong id="modulesCount">—</strong></div>
+<div class="stat"><span>Leçons</span><strong id="lessonsCount">—</strong></div>
+<div class="stat"><span>Inscriptions</span><strong id="enrollmentsCount">—</strong></div>
+<div class="stat"><span>Utilisateurs</span><strong id="profilesCount">—</strong></div>
+</section>
+
+<section class="panel">
+<h2>Catalogue des formations</h2>
+<div style="overflow-x:auto">
+<table>
+<thead>
+<tr><th>Formation</th><th>Prix</th><th>Durée</th><th>Statut</th></tr>
+</thead>
+<tbody id="coursesTable">
+<tr><td colspan="4">Chargement du catalogue...</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section class="panel">
+<h2>Accès rapides</h2>
+<div class="actions">
+<a href="index.html">Site de l'Académie</a>
+<a href="auth.html">Page de connexion</a>
+</div>
+</section>
+</main>
+
+<footer>GKIMMO — Académie Professionnelle de l'Immobilier</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const URL="https://uhrmfqsrxnmrdfiwcazm.supabase.co";
+const KEY="sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
+const client=window.supabase.createClient(URL,KEY);
+
+const message=document.getElementById("message");
+
+function showMessage(text,error=false){
+ message.textContent=text;
+ message.className=error?"status error":"status";
+}
+
+async function countRows(table,elementId){
+ const {count,error}=await client
+  .from(table)
+  .select("*",{count:"exact",head:true});
+
+ if(error){
+  document.getElementById(elementId).textContent="—";
+  return;
+ }
+ document.getElementById(elementId).textContent=count ?? 0;
+}
+
+async function loadDashboard(){
+ const {data:{session},error:sessionError}=await client.auth.getSession();
+
+ if(sessionError || !session){
+  window.location.replace("auth.html");
+  return;
+ }
+
+ const {data:profile,error:profileError}=await client
+  .from("profiles")
+  .select("full_name,role")
+  .eq("id",session.user.id)
+  .single();
+
+ if(profileError || !profile || profile.role!=="administrateur"){
+  showMessage("Accès réservé à l'administration GKIMMO.",true);
+  await client.auth.signOut();
+  window.location.replace("auth.html");
+  return;
+ }
+
+ document.getElementById("adminName").textContent=
+  "Bienvenue, "+(profile.full_name || session.user.email);
+
+ showMessage("Connexion administrateur vérifiée.");
+
+ await Promise.all([
+  countRows("courses","coursesCount"),
+  countRows("course_modules","modulesCount"),
+  countRows("lessons","lessonsCount"),
+  countRows("enrollments","enrollmentsCount"),
+  countRows("profiles","profilesCount")
+ ]);
+
+ const {data:courses,error}=await client
+  .from("courses")
+  .select("title,price,duration,status")
+  .order("title");
+
+ const tbody=document.getElementById("coursesTable");
+
+ if(error){
+  tbody.innerHTML="<tr><td colspan='4'>Impossible de charger le catalogue.</td></tr>";
+  return;
+ }
+
+ if(!courses || courses.length===0){
+  tbody.innerHTML="<tr><td colspan='4'>Aucune formation disponible.</td></tr>";
+  return;
+ }
+
+ tbody.innerHTML="";
+
+ courses.forEach(course=>{
+  const tr=document.createElement("tr");
+
+  [course.title || "Sans titre",
+   course.price==null?"—":Number(course.price).toLocaleString("fr-FR")+" FCFA",
+   course.duration==null?"—":course.duration,
+   course.status || "Non renseigné"
+  ].forEach(value=>{
+   const td=document.createElement("td");
+   td.textContent=value;
+   tr.appendChild(td);
+  });
+
+  tbody.appendChild(tr);
+ });
+}
+
+document.getElementById("logoutBtn").addEventListener("click",async()=>{
+ const {error}=await client.auth.signOut();
+ if(error){
+  showMessage("Erreur lors de la déconnexion.",true);
+  return;
+ }
+ window.location.replace("auth.html");
+});
+
+loadDashboard();
+</script>
+</body>
+</html>
