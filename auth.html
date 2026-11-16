@@ -2,245 +2,377 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Connexion | API-GKIMMO</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#faf8f2;color:#29251f}
-header{background:#38231f;color:white;padding:18px 7%;display:flex;justify-content:space-between}
-header a{color:white;text-decoration:none}
-main{max-width:520px;margin:40px auto;padding:18px}
-.panel{background:white;border:1px solid #eee5d9;border-radius:12px;padding:28px}
-h1{color:#432c23}
-.intro,.small{color:#766d65}
-.tabs{display:flex;gap:8px;margin:20px 0}
-.tab{flex:1;padding:12px;border:1px solid #d9cbbb;background:#faf8f2;cursor:pointer}
-.tab.active{background:#38231f;color:white}
-label{display:block;margin:14px 0 6px;font-weight:bold}
-input{width:100%;padding:12px;border:1px solid #d7cec2;border-radius:6px}
-.submit{width:100%;padding:13px;margin-top:20px;background:#d6ad60;border:0;border-radius:6px;font-weight:bold;cursor:pointer}
-.submit:disabled{opacity:.6}
-.link{display:block;text-align:center;margin-top:15px;color:#72512c;cursor:pointer}
-.message{display:none;margin-top:16px;padding:12px;border-radius:6px}
-.message.info{display:block;background:#f3ead8}
-.message.error{display:block;background:#fce8e6;color:#8b2118}
-[hidden]{display:none!important}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion | Académie GKIMMO</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #102c24, #17634b);
+    }
+    .container {
+      width: 100%;
+      max-width: 430px;
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 35px rgba(0,0,0,.2);
+    }
+    .logo {
+      text-align: center;
+      color: #17634b;
+      font-size: 25px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 22px;
+      margin: 10px 0;
+      color: #183b30;
+    }
+    .subtitle {
+      text-align: center;
+      color: #68756f;
+      font-size: 14px;
+      margin-bottom: 25px;
+    }
+    label {
+      display: block;
+      font-weight: bold;
+      font-size: 14px;
+      margin: 15px 0 7px;
+    }
+    input {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #d5ddd8;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    input:focus {
+      outline: 2px solid #23845e;
+      border-color: transparent;
+    }
+    button {
+      width: 100%;
+      border: none;
+      padding: 14px;
+      margin-top: 18px;
+      border-radius: 8px;
+      background: #17634b;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+    .links {
+      text-align: center;
+      margin-top: 18px;
+      font-size: 14px;
+    }
+    .links a {
+      color: #17634b;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .message {
+      display: none;
+      padding: 12px;
+      margin-top: 15px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+    .error {
+      display: block;
+      background: #fff0f0;
+      color: #a32222;
+    }
+    .success {
+      display: block;
+      background: #eaf8ef;
+      color: #17613a;
+    }
+    .hidden { display: none; }
+  </style>
 </head>
 <body>
 
-<header>
-<strong>API-GKIMMO</strong>
-<a href="index.html">← Accueil</a>
-</header>
+<div class="container">
+  <div class="logo">GKIMMO</div>
+  <h1 id="pageTitle">Bienvenue à l'Académie</h1>
+  <p class="subtitle">Académie Professionnelle de l'Immobilier</p>
 
-<main>
-<div class="panel">
-<h1>Votre espace de formation</h1>
-<p class="intro">Connectez-vous à l'Académie Professionnelle de l'Immobilier GKIMMO.</p>
+  <form id="authForm">
+    <div id="nameField" class="hidden">
+      <label for="fullName">Nom complet</label>
+      <input type="text" id="fullName" autocomplete="name">
+    </div>
 
-<div class="tabs">
-<button class="tab active" id="loginTab" type="button">Connexion</button>
-<button class="tab" id="signupTab" type="button">Créer un compte</button>
+    <label for="email">Adresse e-mail</label>
+    <input type="email" id="email" required autocomplete="email">
+
+    <div id="passwordField">
+      <label for="password">Mot de passe</label>
+      <input type="password" id="password" required
+             autocomplete="current-password">
+    </div>
+
+    <button type="submit" id="submitBtn">Se connecter</button>
+  </form>
+
+  <div id="message" class="message"></div>
+
+  <div class="links" id="loginLinks">
+    <p><a id="forgotLink">Mot de passe oublié ?</a></p>
+    <p>Pas encore de compte ?
+      <a id="signupLink">Créer un compte</a>
+    </p>
+  </div>
+
+  <div class="links hidden" id="signupLinks">
+    <p>Vous avez déjà un compte ?
+      <a id="loginLink">Se connecter</a>
+    </p>
+  </div>
+
+  <div class="links hidden" id="resetLinks">
+    <p><a id="backLink">Retour à la connexion</a></p>
+  </div>
 </div>
-
-<form id="authForm">
-<div id="nameField" hidden>
-<label for="fullName">Nom et prénom</label>
-<input id="fullName" type="text" autocomplete="name">
-</div>
-
-<label for="email">Adresse e-mail</label>
-<input id="email" type="email" autocomplete="email" required>
-
-<label for="password">Mot de passe</label>
-<input id="password" type="password" minlength="8" required>
-
-<button class="submit" id="submitBtn" type="submit">Se connecter</button>
-</form>
-
-<a class="link" id="forgotLink">Mot de passe oublié ?</a>
-<div class="message" id="message" role="status"></div>
-<p class="small">Académie Professionnelle de l'Immobilier GKIMMO.</p>
-</div>
-</main>
 
 <script>
-const URL="https://uhrmfqsrxnmrdfiwcazm.supabase.co";
-const KEY="sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
+const SUPABASE_URL = "https://uhrmfqsrxnmrdfiwcazm.supabase.co";
+const KEY = "sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
 
-let client=null;
-let mode="login";
+let client = null;
+let mode = "login";
 
-const loginTab=document.getElementById("loginTab");
-const signupTab=document.getElementById("signupTab");
-const nameField=document.getElementById("nameField");
-const fullName=document.getElementById("fullName");
-const form=document.getElementById("authForm");
-const submitBtn=document.getElementById("submitBtn");
-const message=document.getElementById("message");
-const forgotLink=document.getElementById("forgotLink");
+const form = document.getElementById("authForm");
+const message = document.getElementById("message");
+const submitBtn = document.getElementById("submitBtn");
 
-function showMessage(text,type="info"){
-message.textContent=text;
-message.className="message "+type;
+function showMessage(text, type = "error") {
+  message.textContent = text;
+  message.className = "message " + type;
 }
 
-function setMode(next){
-mode=next;
-const signup=mode==="signup";
-
-loginTab.classList.toggle("active",!signup);
-signupTab.classList.toggle("active",signup);
-nameField.hidden=!signup;
-fullName.required=signup;
-submitBtn.textContent=signup?"Créer mon compte":"Se connecter";
-forgotLink.hidden=signup;
-message.className="message";
+function clearMessage() {
+  message.textContent = "";
+  message.className = "message";
 }
 
-loginTab.onclick=()=>setMode("login");
-signupTab.onclick=()=>setMode("signup");
+function setMode(newMode) {
+  mode = newMode;
+  clearMessage();
 
-async function redirectByRole(){
-const {data:{session},error:sessionError}=await client.auth.getSession();
+  document.getElementById("nameField").classList.toggle(
+    "hidden", mode !== "signup"
+  );
+  document.getElementById("passwordField").classList.toggle(
+    "hidden", mode === "reset"
+  );
+  document.getElementById("loginLinks").classList.toggle(
+    "hidden", mode !== "login"
+  );
+  document.getElementById("signupLinks").classList.toggle(
+    "hidden", mode !== "signup"
+  );
+  document.getElementById("resetLinks").classList.toggle(
+    "hidden", mode !== "reset"
+  );
 
-if(sessionError)throw sessionError;
-if(!session)return;
+  document.getElementById("password").required = mode !== "reset";
 
-const {data:profile,error}=await client
-.from("profiles")
-.select("role")
-.eq("id",session.user.id)
-.single();
-
-if(error||!profile){
-throw new Error("Profil introuvable : "+(error?.message||"aucune donnée"));
+  if (mode === "login") {
+    document.getElementById("pageTitle").textContent =
+      "Bienvenue à l'Académie";
+    submitBtn.textContent = "Se connecter";
+  } else if (mode === "signup") {
+    document.getElementById("pageTitle").textContent =
+      "Créer un compte apprenant";
+    submitBtn.textContent = "Créer mon compte";
+  } else {
+    document.getElementById("pageTitle").textContent =
+      "Réinitialiser le mot de passe";
+    submitBtn.textContent = "Envoyer le lien";
+  }
 }
 
-if(profile.role==="administrateur"){
-window.location.replace("admin.html");
-}else if(profile.role==="formateur"){
-window.location.replace("formateur.html");
-}else{
-window.location.replace("dashboard.html");
-}
-}
+document.getElementById("signupLink").onclick = () => setMode("signup");
+document.getElementById("loginLink").onclick = () => setMode("login");
+document.getElementById("forgotLink").onclick = () => setMode("reset");
+document.getElementById("backLink").onclick = () => setMode("login");
 
-form.addEventListener("submit",async(event)=>{
-event.preventDefault();
-
-if(!client){
-showMessage("Le service de connexion ne s'est pas chargé. Vérifiez Internet puis actualisez la page.","error");
-return;
+function loadSupabase(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error("Chargement impossible"));
+    document.head.appendChild(script);
+  });
 }
 
-submitBtn.disabled=true;
+async function initializeSupabase() {
+  try {
+    try {
+      await loadSupabase(
+        "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+      );
+    } catch (firstError) {
+      await loadSupabase(
+        "https://unpkg.com/@supabase/supabase-js@2"
+      );
+    }
 
-const email=document.getElementById("email").value.trim();
-const password=document.getElementById("password").value;
+    if (!window.supabase || !window.supabase.createClient) {
+      throw new Error("La bibliothèque Supabase est introuvable.");
+    }
 
-try{
-if(mode==="signup"){
-const name=fullName.value.trim();
+    client = window.supabase.createClient(SUPABASE_URL, KEY);
+    return true;
+  } catch (error) {
+    showMessage(
+      "Service de connexion indisponible. Vérifiez Internet puis actualisez la page. " +
+      error.message
+    );
+    submitBtn.disabled = true;
+    return false;
+  }
+}
 
-if(!name)throw new Error("Veuillez saisir votre nom complet.");
+async function redirectUser(user) {
+  showMessage("Vérification de votre compte...", "success");
 
-const {error}=await client.auth.signUp({
-email,
-password,
-options:{data:{full_name:name}}
+  const { data, error } = await client
+    .from("profiles")
+    .select("full_name, role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    showMessage(
+      "Connexion réussie, mais impossible de vérifier votre profil : " +
+      error.message
+    );
+    return;
+  }
+
+  if (!data) {
+    showMessage(
+      "Votre compte est connecté, mais votre profil n'existe pas encore. " +
+      "Veuillez contacter l'administration GKIMMO."
+    );
+    return;
+  }
+
+  if (data.role === "administrateur") {
+    window.location.href = "admin.html";
+  } else if (data.role === "formateur") {
+    window.location.href = "formateur.html";
+  } else {
+    window.location.href = "dashboard.html";
+  }
+}
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  clearMessage();
+
+  if (!client) {
+    showMessage("Le service de connexion n'est pas encore prêt.");
+    return;
+  }
+
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const fullName = document.getElementById("fullName").value.trim();
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Veuillez patienter...";
+
+  try {
+    if (mode === "login") {
+      const { data, error } = await client.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+
+      await redirectUser(data.user);
+
+    } else if (mode === "signup") {
+      if (!fullName) {
+        throw new Error("Veuillez saisir votre nom complet.");
+      }
+
+      const { data, error } = await client.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.session && data.user) {
+        showMessage(
+          "Compte créé. Vérification de votre profil...",
+          "success"
+        );
+        await redirectUser(data.user);
+      } else {
+        showMessage(
+          "Votre demande de création de compte a été envoyée. " +
+          "Consultez votre boîte e-mail pour confirmer votre adresse.",
+          "success"
+        );
+      }
+
+    } else if (mode === "reset") {
+      const { error } = await client.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + "/auth.html"
+      });
+
+      if (error) throw error;
+
+      showMessage(
+        "Si cette adresse correspond à un compte, un lien de réinitialisation sera envoyé.",
+        "success"
+      );
+    }
+
+  } catch (error) {
+    showMessage(error.message || "Une erreur est survenue.");
+  } finally {
+    submitBtn.disabled = false;
+
+    if (mode === "login") submitBtn.textContent = "Se connecter";
+    else if (mode === "signup") submitBtn.textContent = "Créer mon compte";
+    else submitBtn.textContent = "Envoyer le lien";
+  }
 });
 
-if(error)throw error;
-
-showMessage("Compte créé. Consultez votre e-mail pour confirmer votre inscription avant de vous connecter.");
-
-}else{
-const {error}=await client.auth.signInWithPassword({
-email,
-password
-});
-
-if(error)throw error;
-
-showMessage("Connexion réussie. Ouverture de votre espace...");
-await redirectByRole();
-}
-
-}catch(error){
-showMessage(error.message||"Une erreur est survenue.","error");
-}finally{
-submitBtn.disabled=false;
-}
-});
-
-forgotLink.onclick=async()=>{
-if(!client){
-showMessage("Le service de connexion ne s'est pas chargé. Actualisez la page.","error");
-return;
-}
-
-const email=document.getElementById("email").value.trim();
-
-if(!email){
-showMessage("Saisissez votre adresse e-mail.","error");
-return;
-}
-
-try{
-const {error}=await client.auth.resetPasswordForEmail(email,{
-redirectTo:window.location.origin+"/auth.html"
-});
-
-if(error)throw error;
-
-showMessage("Consultez votre boîte e-mail pour réinitialiser votre mot de passe.");
-
-}catch(error){
-showMessage(error.message||"Impossible d'envoyer le lien.","error");
-}
-};
-
-function loadSupabase(url){
-return new Promise((resolve,reject)=>{
-const script=document.createElement("script");
-script.src=url;
-
-script.onload=()=>{
-if(window.supabase){
-resolve();
-}else{
-reject(new Error("Bibliothèque Supabase indisponible."));
-}
-};
-
-script.onerror=()=>reject(new Error("Chargement impossible."));
-document.head.appendChild(script);
-});
-}
-
-async function initializeAuth(){
-try{
-try{
-await loadSupabase("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
-}catch(error){
-await loadSupabase("https://unpkg.com/@supabase/supabase-js@2");
-}
-
-client=window.supabase.createClient(URL,KEY);
-await redirectByRole();
-
-}catch(error){
-showMessage(
-"Service de connexion indisponible. Vérifiez Internet puis actualisez la page. "+(error.message||""),
-"error"
-);
-}
-}
-
-initializeAuth();
+initializeSupabase();
 </script>
+
 </body>
 </html>
