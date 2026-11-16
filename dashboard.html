@@ -9,8 +9,7 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:#faf8f2;color:#29251f;line-height:1.55}
 header{background:#38231f;color:white;padding:16px 6%;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.logo{font-weight:bold;color:#e8c77c}
-.logo small{display:block;color:white;font-size:10px;letter-spacing:1.3px}
+.logo{font-weight:bold;color:#e8c77c}.logo small{display:block;color:white;font-size:10px;letter-spacing:1.3px}
 .actions{display:flex;gap:10px}
 .actions a,.actions button{color:white;background:transparent;border:1px solid #bda17d;border-radius:5px;padding:9px 12px;text-decoration:none;font-size:13px;cursor:pointer}
 main{max-width:1100px;margin:32px auto;padding:0 18px}
@@ -30,8 +29,13 @@ main{max-width:1100px;margin:32px auto;padding:0 18px}
 .error{background:#fce8e6;color:#8b2118}
 .course button,.back-button{background:#684632;color:white;border:0;border-radius:6px;padding:10px 14px;cursor:pointer;margin-top:10px}
 .course button:hover,.back-button:hover{background:#38231f}
-.lesson-list{padding-left:20px}
-.lesson-list li{margin:8px 0}
+.lesson-list{list-style:none;padding:0}
+.lesson-list li{margin:12px 0;padding:12px;background:#faf8f2;border-radius:7px}
+.lesson-check{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.lesson-check input{width:19px;height:19px;accent-color:#684632}
+.progress-track{height:12px;background:#eee5d9;border-radius:10px;overflow:hidden;margin:10px 0}
+.progress-fill{height:100%;background:#66834b;width:0%;transition:width .2s}
+.progress-label{font-size:13px;color:#513529;font-weight:bold}
 .muted{font-size:12px;color:#766d65;margin-top:25px}
 [hidden]{display:none!important}
 </style>
@@ -80,6 +84,11 @@ main{max-width:1100px;margin:32px auto;padding:0 18px}
   <button class="back-button" id="backButton" type="button">← Retour à mes formations</button>
   <h2 class="section-title" id="detailTitle"></h2>
   <p id="detailDescription"></p>
+  <div class="card">
+    <div class="progress-label" id="progressLabel">Progression : 0%</div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <p id="progressCount">0 leçon terminée</p>
+  </div>
   <div id="modulesMessage" class="notice">Chargement des modules...</div>
   <div id="modulesList"></div>
 </section>
@@ -112,46 +121,33 @@ function showMessage(id,message,isError=false){
 function makeCourseCard(course,buttonText,callback){
   const article=document.createElement("article");
   article.className="course";
-
   const category=document.createElement("span");
   category.className="pill";
   category.textContent=course.category||"Formation";
-
   const title=document.createElement("h3");
   title.textContent=course.title||"Formation";
-
   const description=document.createElement("p");
   description.textContent=course.description||"Description à venir.";
-
   const price=document.createElement("p");
-  price.textContent=course.price!=null
-    ?"Tarif : "+course.price+" FCFA":"Tarif à préciser";
-
+  price.textContent=course.price!=null?"Tarif : "+course.price+" FCFA":"Tarif à préciser";
   const button=document.createElement("button");
   button.type="button";
   button.textContent=buttonText;
   button.addEventListener("click",callback);
-
   article.append(category,title,description,price,button);
   return article;
 }
 
 async function loadMyCourses(){
-  const message=document.getElementById("myCoursesMessage");
   const list=document.getElementById("myCoursesList");
-
   list.replaceChildren();
   showMessage("myCoursesMessage","Recherche de vos inscriptions...");
 
-  const {data:enrollments,error}=await sb
-    .from("enrollments")
-    .select("course_id,status")
-    .eq("user_id",currentUser.id);
+  const {data:enrollments,error}=await sb.from("enrollments")
+    .select("course_id,status").eq("user_id",currentUser.id);
 
   if(error){
-    showMessage("myCoursesMessage",
-      "Impossible de récupérer vos inscriptions. Vérifiez la structure de la table enrollments et ses autorisations.",
-      true);
+    showMessage("myCoursesMessage","Impossible de récupérer vos inscriptions.",true);
     console.error(error);
     return;
   }
@@ -159,21 +155,16 @@ async function loadMyCourses(){
   const approved=(enrollments||[]).filter(e=>
     validStatuses.includes(String(e.status||"").toLowerCase())
   );
-
   const courseIds=[...new Set(approved.map(e=>e.course_id).filter(Boolean))];
-
   document.getElementById("enrollmentCount").textContent=courseIds.length;
 
   if(courseIds.length===0){
-    showMessage("myCoursesMessage",
-      "Vous n'avez pas encore de formation validée. Consultez le catalogue ci-dessous.");
+    showMessage("myCoursesMessage","Vous n'avez pas encore de formation validée. Consultez le catalogue ci-dessous.");
     return;
   }
 
-  const {data:courses,error:courseError}=await sb
-    .from("courses")
-    .select("id,title,description,category,price")
-    .in("id",courseIds);
+  const {data:courses,error:courseError}=await sb.from("courses")
+    .select("id,title,description,category,price").in("id",courseIds);
 
   if(courseError){
     showMessage("myCoursesMessage","Impossible de charger vos formations.",true);
@@ -181,13 +172,17 @@ async function loadMyCourses(){
     return;
   }
 
-  message.hidden=true;
-
+  document.getElementById("myCoursesMessage").hidden=true;
   (courses||[]).forEach(course=>{
-    list.appendChild(makeCourseCard(course,"Accéder à la formation",()=>{
-      openCourse(course);
-    }));
+    list.appendChild(makeCourseCard(course,"Accéder à la formation",()=>openCourse(course)));
   });
+}
+
+async function updateProgress(total,completed){
+  const percent=total?Math.round(completed/total*100):0;
+  document.getElementById("progressLabel").textContent="Progression : "+percent+"%";
+  document.getElementById("progressFill").style.width=percent+"%";
+  document.getElementById("progressCount").textContent=completed+" leçon(s) terminée(s) sur "+total;
 }
 
 async function openCourse(course){
@@ -198,11 +193,8 @@ async function openCourse(course){
   document.getElementById("modulesList").replaceChildren();
   showMessage("modulesMessage","Chargement des modules...");
 
-  const {data:modules,error}=await sb
-    .from("course_modules")
-    .select("id,title,description")
-    .eq("course_id",course.id)
-    .order("id");
+  const {data:modules,error}=await sb.from("course_modules")
+    .select("id,title,description").eq("course_id",course.id).order("id");
 
   if(error){
     showMessage("modulesMessage","Impossible de charger les modules.",true);
@@ -215,10 +207,13 @@ async function openCourse(course){
 
   if(!modules||modules.length===0){
     showMessage("modulesMessage","Aucun module n'est encore disponible.");
+    await updateProgress(0,0);
     return;
   }
 
   document.getElementById("modulesMessage").hidden=true;
+  let totalLessons=0;
+  let completedLessons=0;
 
   for(const module of modules){
     const article=document.createElement("article");
@@ -226,53 +221,102 @@ async function openCourse(course){
 
     const title=document.createElement("h3");
     title.textContent=module.title||"Module";
-
     const description=document.createElement("p");
     description.textContent=module.description||"";
-
     article.append(title,description);
 
-    const {data:lessons,error:lessonError}=await sb
-      .from("lessons")
-      .select("id,title,content")
-      .eq("module_id",module.id)
-      .order("id");
+    const {data:lessons,error:lessonError}=await sb.from("lessons")
+      .select("id,title,content").eq("module_id",module.id).order("id");
 
     if(lessonError){
       const warning=document.createElement("p");
       warning.textContent="Les leçons ne sont pas disponibles pour le moment.";
       article.append(warning);
       console.error(lessonError);
-    }else if(lessons&&lessons.length){
-      const heading=document.createElement("strong");
-      heading.textContent="Leçons";
-      const ul=document.createElement("ul");
-      ul.className="lesson-list";
+      container.appendChild(article);
+      continue;
+    }
 
-      lessons.forEach(lesson=>{
-        const li=document.createElement("li");
-        li.textContent=lesson.title||"Leçon";
-        ul.appendChild(li);
-      });
-
-      article.append(heading,ul);
-    }else{
+    if(!lessons||lessons.length===0){
       const empty=document.createElement("p");
       empty.textContent="Les leçons seront bientôt disponibles.";
       article.append(empty);
+      container.appendChild(article);
+      continue;
     }
 
+    const ul=document.createElement("ul");
+    ul.className="lesson-list";
+
+    const {data:progress,error:progressError}=await sb.from("lesson_progress")
+      .select("lesson_id,completed").eq("user_id",currentUser.id);
+
+    if(progressError){
+      showMessage("modulesMessage","Impossible de lire votre progression. Vérifiez la table lesson_progress.",true);
+      console.error(progressError);
+      return;
+    }
+
+    const progressMap=new Map((progress||[]).map(p=>[p.lesson_id,p.completed]));
+
+    lessons.forEach(lesson=>{
+      totalLessons++;
+      const isCompleted=progressMap.get(lesson.id)===true;
+      if(isCompleted)completedLessons++;
+
+      const li=document.createElement("li");
+      const label=document.createElement("label");
+      label.className="lesson-check";
+
+      const checkbox=document.createElement("input");
+      checkbox.type="checkbox";
+      checkbox.checked=isCompleted;
+
+      const text=document.createElement("span");
+      text.textContent=lesson.title||"Leçon";
+
+      checkbox.addEventListener("change",async()=>{
+        checkbox.disabled=true;
+        const completed=checkbox.checked;
+
+        const {error}=await sb.from("lesson_progress").upsert({
+          user_id:currentUser.id,
+          lesson_id:lesson.id,
+          completed:completed,
+          completed_at:completed?new Date().toISOString():null
+        },{onConflict:"user_id,lesson_id"});
+
+        checkbox.disabled=false;
+
+        if(error){
+          checkbox.checked=!completed;
+          alert("Impossible d'enregistrer votre progression. Réessayez.");
+          console.error(error);
+          return;
+        }
+
+        if(completed)completedLessons++;
+        else completedLessons--;
+        await updateProgress(totalLessons,completedLessons);
+      });
+
+      label.append(checkbox,text);
+      li.appendChild(label);
+      ul.appendChild(li);
+    });
+
+    article.appendChild(ul);
     container.appendChild(article);
   }
+
+  await updateProgress(totalLessons,completedLessons);
 }
 
 async function loadCatalog(){
   const list=document.getElementById("catalogList");
-  const {data:courses,error}=await sb
-    .from("courses")
+  const {data:courses,error}=await sb.from("courses")
     .select("id,title,description,category,price")
-    .eq("status","published")
-    .order("title");
+    .eq("status","published").order("title");
 
   if(error){
     showMessage("catalogMessage","Impossible de charger le catalogue.",true);
@@ -286,7 +330,6 @@ async function loadCatalog(){
   }
 
   document.getElementById("catalogMessage").hidden=true;
-
   courses.forEach(course=>{
     list.appendChild(makeCourseCard(course,"Voir dans mes formations",()=>{
       alert("Pour accéder à cette formation, votre inscription doit d'abord être validée.");
@@ -296,7 +339,6 @@ async function loadCatalog(){
 
 async function startDashboard(){
   const {data:{session},error}=await sb.auth.getSession();
-
   if(error||!session){
     window.location.replace("auth.html");
     return;
