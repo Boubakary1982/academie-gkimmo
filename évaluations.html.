@@ -1,0 +1,421 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Évaluations | API-GKIMMO</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f5f3ee;color:#302820;font-family:Arial,sans-serif;line-height:1.5}
+header{background:#38231f;color:white;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+main{max-width:900px;margin:24px auto;padding:0 14px}
+.panel{background:white;border:1px solid #e9e2d8;border-radius:10px;padding:18px;margin-bottom:16px}
+h1,h2,h3{color:#432c23}
+label{display:block;font-weight:bold;font-size:14px;margin-top:10px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #d9d0c4;border-radius:6px;font:inherit;margin:6px 0 10px}
+button{border:0;border-radius:6px;padding:11px 14px;background:#38231f;color:white;font-weight:bold;cursor:pointer;margin:5px 4px 5px 0}
+.gold{background:#d6ad60;color:#302820}
+.light{background:#eee7dc;color:#38231f}
+.status{padding:12px;background:#f3ead8;border-radius:7px;margin:12px 0}
+.error{background:#fce8e6;color:#8b2118}
+.success{background:#e5f5e9;color:#17613a}
+.question{border:1px solid #e9e2d8;border-radius:8px;padding:14px;margin:12px 0}
+.option{display:flex;align-items:center;gap:8px}
+.option input[type=radio]{width:auto;margin:0}
+small{color:#766d65}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<header>
+<strong>API-GKIMMO | Gestion des évaluations</strong>
+<button id="logout" class="gold">Déconnexion</button>
+</header>
+
+<main>
+
+<section class="panel">
+<h1>Gestion des évaluations</h1>
+<p id="adminInfo">Vérification du compte...</p>
+<div id="notice" class="status">Chargement...</div>
+<a href="admin.html">← Retour à l'administration</a>
+</section>
+
+<section class="panel" id="createPanel">
+<h2>1. Créer une évaluation</h2>
+
+<label>Formation concernée</label>
+<select id="course">
+<option value="">Chargement des formations...</option>
+</select>
+
+<label>Titre de l'évaluation</label>
+<input id="evalTitle" placeholder="Ex. Évaluation du module 1">
+
+<label>Description</label>
+<textarea id="evalDescription" placeholder="Consignes et objectifs"></textarea>
+
+<label>Note minimale (%)</label>
+<input id="passing" type="number" min="0" max="100" value="50">
+
+<label>Durée (minutes)</label>
+<input id="duration" type="number" min="1" value="30">
+
+<button id="createEval" class="gold">Créer l'évaluation</button>
+</section>
+
+<section class="panel hidden" id="questionPanel">
+<h2>2. Ajouter une question</h2>
+<p id="currentEval"></p>
+
+<label>Question</label>
+<textarea id="questionText" placeholder="Écrivez votre question"></textarea>
+
+<p><strong>Propositions de réponses</strong></p>
+<small>Sélectionnez une seule bonne réponse.</small>
+
+<div id="options">
+<div class="option">
+<input type="radio" name="correct" value="0" checked>
+<input id="opt0" placeholder="Proposition A">
+</div>
+<div class="option">
+<input type="radio" name="correct" value="1">
+<input id="opt1" placeholder="Proposition B">
+</div>
+<div class="option">
+<input type="radio" name="correct" value="2">
+<input id="opt2" placeholder="Proposition C">
+</div>
+<div class="option">
+<input type="radio" name="correct" value="3">
+<input id="opt3" placeholder="Proposition D">
+</div>
+</div>
+
+<label>Points attribués</label>
+<input id="points" type="number" min="1" value="1">
+
+<button id="addQuestion" class="gold">Enregistrer la question</button>
+<button id="publishEval">Publier l'évaluation</button>
+
+<div id="questionNotice" class="status">
+Aucune question ajoutée.
+</div>
+</section>
+
+<section class="panel">
+<h2>3. Évaluations créées</h2>
+<div id="evalList">Chargement...</div>
+</section>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+const URL_SUPA="https://uhrmfqsrxnmrdfiwcazm.supabase.co";
+const KEY_SUPA="sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
+
+const db=window.supabase.createClient(URL_SUPA,KEY_SUPA);
+const $=id=>document.getElementById(id);
+
+let user=null;
+let activeEvaluation=null;
+
+function note(msg,type=""){
+$("notice").textContent=msg;
+$("notice").className="status "+type;
+}
+
+function esc(v){
+return String(v??"").replace(/[&<>"']/g,c=>({
+"&":"&amp;","<":"&lt;",">":"&gt;",
+'"':"&quot;","'":"&#39;"
+}[c]));
+}
+
+async function start(){
+
+const {data,error}=await db.auth.getSession();
+
+if(error||!data.session){
+location.replace("auth.html");
+return;
+}
+
+user=data.session.user;
+
+const {data:p,error:pe}=await db.from("profiles")
+.select("full_name,role")
+.eq("id",user.id)
+.single();
+
+if(pe||!p||p.role!=="administrateur"){
+note("Accès réservé à l'administrateur GKIMMO.","error");
+$("createPanel").classList.add("hidden");
+return;
+}
+
+$("adminInfo").textContent="Connecté : "+(p.full_name||user.email);
+
+note("Espace administrateur prêt.","success");
+
+await loadCourses();
+await loadEvaluations();
+}
+
+async function loadCourses(){
+
+const {data,error}=await db.from("courses")
+.select("id,title")
+.order("title");
+
+if(error){
+$("course").innerHTML='<option value="">Erreur de chargement</option>';
+note(error.message,"error");
+return;
+}
+
+$("course").innerHTML=
+'<option value="">Choisir une formation...</option>'+
+(data||[]).map(c=>
+'<option value="'+c.id+'">'+esc(c.title)+'</option>'
+).join("");
+}
+
+async function loadEvaluations(){
+
+const {data,error}=await db.from("evaluations")
+.select("id,title,status,course_id,created_at")
+.order("created_at",{ascending:false});
+
+if(error){
+$("evalList").textContent="Erreur : "+error.message;
+return;
+}
+
+const list=$("evalList");
+list.replaceChildren();
+
+if(!data?.length){
+list.textContent="Aucune évaluation créée pour le moment.";
+return;
+}
+
+data.forEach(e=>{
+
+const box=document.createElement("div");
+box.className="question";
+
+const title=document.createElement("strong");
+title.textContent=e.title;
+
+const status=document.createElement("p");
+status.textContent="Statut : "+e.status;
+
+const btn=document.createElement("button");
+btn.className="light";
+btn.textContent="Ajouter des questions";
+
+btn.addEventListener("click",()=>{
+chooseEval(e.id,e.title);
+});
+
+box.append(title,status,btn);
+list.appendChild(box);
+
+});
+}
+
+async function chooseEval(id,title){
+
+activeEvaluation=id;
+
+$("currentEval").textContent="Évaluation : "+title;
+
+$("questionPanel").classList.remove("hidden");
+
+$("questionNotice").textContent="Vous pouvez ajouter les questions.";
+
+window.scrollTo({
+top:$("questionPanel").offsetTop,
+behavior:"smooth"
+});
+}
+
+$("createEval").addEventListener("click",async()=>{
+
+const course_id=$("course").value;
+const title=$("evalTitle").value.trim();
+
+if(!course_id||!title){
+note("Choisissez une formation et saisissez un titre.","error");
+return;
+}
+
+const passing_score=Number($("passing").value);
+const duration_minutes=Number($("duration").value);
+
+if(passing_score<0||passing_score>100||duration_minutes<1){
+note("Vérifiez la note minimale et la durée.","error");
+return;
+}
+
+const {data,error}=await db.from("evaluations")
+.insert({
+course_id,
+title,
+description:$("evalDescription").value.trim(),
+passing_score,
+duration_minutes,
+status:"draft"
+})
+.select("id,title")
+.single();
+
+if(error){
+note("Création impossible : "+error.message,"error");
+return;
+}
+
+activeEvaluation=data.id;
+
+$("currentEval").textContent="Évaluation : "+data.title;
+
+$("questionPanel").classList.remove("hidden");
+
+$("questionNotice").textContent=
+"Évaluation créée. Vous pouvez ajouter les questions.";
+
+note("Évaluation créée en brouillon.","success");
+
+await loadEvaluations();
+
+});
+
+$("addQuestion").addEventListener("click",async()=>{
+
+if(!activeEvaluation){
+$("questionNotice").textContent=
+"Créez ou sélectionnez d'abord une évaluation.";
+return;
+}
+
+const question_text=$("questionText").value.trim();
+
+const options=[0,1,2,3].map(i=>
+$("opt"+i).value.trim()
+);
+
+const selected=document.querySelector(
+'input[name="correct"]:checked'
+);
+
+const correct=selected?Number(selected.value):0;
+
+const points=Number($("points").value);
+
+if(!question_text||options.some(x=>!x)||points<1){
+$("questionNotice").textContent=
+"Complétez la question et les quatre propositions.";
+return;
+}
+
+const {data:q,error:qe}=await db.from("evaluation_questions")
+.insert({
+evaluation_id:activeEvaluation,
+question_text,
+question_type:"multiple_choice",
+points,
+position:Date.now()
+})
+.select("id")
+.single();
+
+if(qe){
+$("questionNotice").textContent=
+"Erreur question : "+qe.message;
+return;
+}
+
+const answers=options.map((answer_text,i)=>({
+question_id:q.id,
+answer_text,
+is_correct:i===correct,
+position:i+1
+}));
+
+const {error:ae}=await db.from("evaluation_answers")
+.insert(answers);
+
+if(ae){
+$("questionNotice").textContent=
+"Erreur d'enregistrement des réponses : "+ae.message;
+return;
+}
+
+$("questionText").value="";
+[0,1,2,3].forEach(i=>$("opt"+i).value="");
+$("points").value=1;
+
+$("questionNotice").textContent=
+"Question enregistrée avec ses quatre propositions.";
+
+note("Question ajoutée avec succès.","success");
+
+});
+
+$("publishEval").addEventListener("click",async()=>{
+
+if(!activeEvaluation){
+$("questionNotice").textContent=
+"Aucune évaluation sélectionnée.";
+return;
+}
+
+const {count,error:countError}=await db.from("evaluation_questions")
+.select("*",{count:"exact",head:true})
+.eq("evaluation_id",activeEvaluation);
+
+if(countError){
+note("Vérification impossible : "+countError.message,"error");
+return;
+}
+
+if(!count){
+note("Ajoutez au moins une question avant de publier.","error");
+return;
+}
+
+if(!confirm("Publier cette évaluation ? Vérifiez toutes les questions.")){
+return;
+}
+
+const {error}=await db.from("evaluations")
+.update({status:"published"})
+.eq("id",activeEvaluation);
+
+if(error){
+note("Publication impossible : "+error.message,"error");
+return;
+}
+
+note("Évaluation publiée avec succès.","success");
+
+await loadEvaluations();
+
+});
+
+$("logout").addEventListener("click",async()=>{
+await db.auth.signOut();
+location.replace("auth.html");
+});
+
+start();
+</script>
+
+</body>
+</html>
