@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -28,39 +29,50 @@ input{width:100%;padding:12px;border:1px solid #d7cec2;border-radius:6px}
 </style>
 </head>
 <body>
+
 <header>
 <strong>API-GKIMMO</strong>
 <a href="index.html">← Accueil</a>
 </header>
+
 <main>
 <div class="panel">
 <h1>Votre espace de formation</h1>
 <p class="intro">Connectez-vous à l'Académie Professionnelle de l'Immobilier GKIMMO.</p>
+
 <div class="tabs">
 <button class="tab active" id="loginTab" type="button">Connexion</button>
 <button class="tab" id="signupTab" type="button">Créer un compte</button>
 </div>
+
 <form id="authForm">
 <div id="nameField" hidden>
 <label for="fullName">Nom et prénom</label>
 <input id="fullName" type="text" autocomplete="name">
 </div>
+
 <label for="email">Adresse e-mail</label>
 <input id="email" type="email" autocomplete="email" required>
+
 <label for="password">Mot de passe</label>
 <input id="password" type="password" minlength="8" required>
+
 <button class="submit" id="submitBtn" type="submit">Se connecter</button>
 </form>
+
 <a class="link" id="forgotLink">Mot de passe oublié ?</a>
 <div class="message" id="message" role="status"></div>
 <p class="small">Académie Professionnelle de l'Immobilier GKIMMO.</p>
 </div>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
 const URL="https://uhrmfqsrxnmrdfiwcazm.supabase.co";
 const KEY="sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
-const client=window.supabase.createClient(URL,KEY);
+
+let client=null;
+let mode="login";
+
 const loginTab=document.getElementById("loginTab");
 const signupTab=document.getElementById("signupTab");
 const nameField=document.getElementById("nameField");
@@ -69,14 +81,16 @@ const form=document.getElementById("authForm");
 const submitBtn=document.getElementById("submitBtn");
 const message=document.getElementById("message");
 const forgotLink=document.getElementById("forgotLink");
-let mode="login";
+
 function showMessage(text,type="info"){
 message.textContent=text;
 message.className="message "+type;
 }
+
 function setMode(next){
 mode=next;
 const signup=mode==="signup";
+
 loginTab.classList.toggle("active",!signup);
 signupTab.classList.toggle("active",signup);
 nameField.hidden=!signup;
@@ -85,46 +99,148 @@ submitBtn.textContent=signup?"Créer mon compte":"Se connecter";
 forgotLink.hidden=signup;
 message.className="message";
 }
+
 loginTab.onclick=()=>setMode("login");
 signupTab.onclick=()=>setMode("signup");
+
 async function redirectByRole(){
 const {data:{session},error:sessionError}=await client.auth.getSession();
-if(sessionError||!session)return;
-const {data:profile,error}=await client.from("profiles").select("role").eq("id",session.user.id).single();
-if(error||!profile)return;
-if(profile.role==="administrateur")window.location.replace("admin.html");
-else if(profile.role==="formateur")window.location.replace("formateur.html");
-else window.location.replace("dashboard.html");
+
+if(sessionError)throw sessionError;
+if(!session)return;
+
+const {data:profile,error}=await client
+.from("profiles")
+.select("role")
+.eq("id",session.user.id)
+.single();
+
+if(error||!profile){
+throw new Error("Profil introuvable : "+(error?.message||"aucune donnée"));
 }
+
+if(profile.role==="administrateur"){
+window.location.replace("admin.html");
+}else if(profile.role==="formateur"){
+window.location.replace("formateur.html");
+}else{
+window.location.replace("dashboard.html");
+}
+}
+
 form.addEventListener("submit",async(event)=>{
 event.preventDefault();
+
+if(!client){
+showMessage("Le service de connexion ne s'est pas chargé. Vérifiez Internet puis actualisez la page.","error");
+return;
+}
+
 submitBtn.disabled=true;
+
 const email=document.getElementById("email").value.trim();
 const password=document.getElementById("password").value;
+
 try{
 if(mode==="signup"){
 const name=fullName.value.trim();
+
 if(!name)throw new Error("Veuillez saisir votre nom complet.");
-const {error}=await client.auth.signUp({email,password,options:{data:{full_name:name}}});
+
+const {error}=await client.auth.signUp({
+email,
+password,
+options:{data:{full_name:name}}
+});
+
 if(error)throw error;
+
 showMessage("Compte créé. Consultez votre e-mail pour confirmer votre inscription avant de vous connecter.");
+
 }else{
-const {error}=await client.auth.signInWithPassword({email,password});
+const {error}=await client.auth.signInWithPassword({
+email,
+password
+});
+
 if(error)throw error;
+
 showMessage("Connexion réussie. Ouverture de votre espace...");
 await redirectByRole();
 }
-}catch(error){showMessage(error.message||"Une erreur est survenue.","error");}
-finally{submitBtn.disabled=false;}
+
+}catch(error){
+showMessage(error.message||"Une erreur est survenue.","error");
+}finally{
+submitBtn.disabled=false;
+}
 });
+
 forgotLink.onclick=async()=>{
+if(!client){
+showMessage("Le service de connexion ne s'est pas chargé. Actualisez la page.","error");
+return;
+}
+
 const email=document.getElementById("email").value.trim();
-if(!email){showMessage("Saisissez votre adresse e-mail.","error");return;}
-const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+"/auth.html"});
-if(error)showMessage(error.message,"error");
-else showMessage("Consultez votre boîte e-mail pour réinitialiser votre mot de passe.");
+
+if(!email){
+showMessage("Saisissez votre adresse e-mail.","error");
+return;
+}
+
+try{
+const {error}=await client.auth.resetPasswordForEmail(email,{
+redirectTo:window.location.origin+"/auth.html"
+});
+
+if(error)throw error;
+
+showMessage("Consultez votre boîte e-mail pour réinitialiser votre mot de passe.");
+
+}catch(error){
+showMessage(error.message||"Impossible d'envoyer le lien.","error");
+}
 };
-redirectByRole();
+
+function loadSupabase(url){
+return new Promise((resolve,reject)=>{
+const script=document.createElement("script");
+script.src=url;
+
+script.onload=()=>{
+if(window.supabase){
+resolve();
+}else{
+reject(new Error("Bibliothèque Supabase indisponible."));
+}
+};
+
+script.onerror=()=>reject(new Error("Chargement impossible."));
+document.head.appendChild(script);
+});
+}
+
+async function initializeAuth(){
+try{
+try{
+await loadSupabase("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
+}catch(error){
+await loadSupabase("https://unpkg.com/@supabase/supabase-js@2");
+}
+
+client=window.supabase.createClient(URL,KEY);
+await redirectByRole();
+
+}catch(error){
+showMessage(
+"Service de connexion indisponible. Vérifiez Internet puis actualisez la page. "+(error.message||""),
+"error"
+);
+}
+}
+
+initializeAuth();
 </script>
 </body>
 </html>
