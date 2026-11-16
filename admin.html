@@ -3,47 +3,53 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Administration | API-GKIMMO</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:#f5f3ee;color:#302820}
-header{background:#38231f;color:white;padding:18px 6%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
-header strong{font-size:19px}
-header button{background:#d6ad60;color:#302820;border:0;padding:10px 16px;border-radius:6px;cursor:pointer;font-weight:bold}
-main{max-width:1100px;margin:30px auto;padding:0 18px}
-h1{color:#432c23}
-.subtitle{color:#766d65}
-.welcome,.panel{background:white;border:1px solid #e9e2d8;border-radius:12px;padding:22px;margin-bottom:20px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin:20px 0}
-.stat{background:white;border:1px solid #e9e2d8;border-radius:10px;padding:18px}
-.stat span{display:block;color:#766d65;font-size:14px}
-.stat strong{display:block;font-size:28px;color:#76502d;margin-top:8px}
-h2{font-size:19px;color:#432c23}
-table{width:100%;border-collapse:collapse}
-th,td{text-align:left;padding:12px;border-bottom:1px solid #eee;font-size:14px}
+header{background:#38231f;color:white;padding:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+button,.btn{border:0;border-radius:6px;padding:10px 14px;cursor:pointer;font-weight:bold;background:#38231f;color:white}
+button.gold{background:#d6ad60;color:#302820}
+button.danger{background:#a52d25}
+button.light{background:#eee7dc;color:#38231f}
+main{max-width:1200px;margin:25px auto;padding:0 15px}
+.panel,.stat{background:white;border:1px solid #e9e2d8;border-radius:10px;padding:18px;margin-bottom:18px}
+h1,h2{color:#432c23}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.stat span{color:#766d65;font-size:13px}
+.stat strong{display:block;font-size:25px;color:#76502d;margin-top:8px}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}
+nav button{background:#e9e2d8;color:#38231f}
+nav button.active{background:#38231f;color:white}
+.tab{display:none}.tab.active{display:block}
+input,select,textarea{width:100%;padding:11px;margin:6px 0 12px;border:1px solid #d9d0c4;border-radius:6px;font:inherit}
+textarea{min-height:90px}
+label{font-weight:bold;font-size:14px}
+table{width:100%;border-collapse:collapse;min-width:600px}
+th,td{text-align:left;padding:11px;border-bottom:1px solid #eee;font-size:13px}
 th{background:#f8f5ef}
-.status{padding:12px;border-radius:7px;background:#f3ead8;color:#5b4428;margin:15px 0}
+.tablewrap{overflow-x:auto}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.status{padding:12px;background:#f3ead8;border-radius:7px;margin:12px 0}
 .error{background:#fce8e6;color:#8b2118}
-.actions{display:flex;gap:10px;flex-wrap:wrap}
-.actions a{display:inline-block;background:#38231f;color:white;padding:11px 15px;border-radius:6px;text-decoration:none}
-footer{text-align:center;color:#766d65;padding:25px}
-@media(max-width:600px){th,td{padding:9px 6px;font-size:12px}}
+.small{font-size:12px;color:#766d65}
+.hidden{display:none}
+footer{text-align:center;padding:25px;color:#766d65}
 </style>
 </head>
 <body>
-
 <header>
 <strong>API-GKIMMO | Administration</strong>
-<button id="logoutBtn">Déconnexion</button>
+<button id="logoutBtn" class="gold">Déconnexion</button>
 </header>
 
 <main>
-<section class="welcome">
+<section class="panel">
 <h1>Tableau de bord GKIMMO</h1>
-<p class="subtitle">Administration de l'Académie Professionnelle de l'Immobilier.</p>
-<p id="adminName">Vérification de votre compte...</p>
-<div id="message" class="status">Chargement des données...</div>
+<p id="adminName">Vérification du compte...</p>
+<div id="message" class="status">Chargement...</div>
 </section>
 
 <section class="stats">
@@ -52,138 +58,377 @@ footer{text-align:center;color:#766d65;padding:25px}
 <div class="stat"><span>Leçons</span><strong id="lessonsCount">—</strong></div>
 <div class="stat"><span>Inscriptions</span><strong id="enrollmentsCount">—</strong></div>
 <div class="stat"><span>Utilisateurs</span><strong id="profilesCount">—</strong></div>
+<div class="stat"><span>Paiements</span><strong id="paymentsCount">—</strong></div>
 </section>
 
-<section class="panel">
-<h2>Catalogue des formations</h2>
-<div style="overflow-x:auto">
+<nav>
+<button class="active" data-tab="formations">Formations</button>
+<button data-tab="contenu">Modules et leçons</button>
+<button data-tab="inscriptions">Inscriptions</button>
+<button data-tab="paiements">Paiements</button>
+<button data-tab="utilisateurs">Utilisateurs</button>
+</nav>
+
+<section id="formations" class="tab active panel">
+<h2>Gestion des formations</h2>
+<form id="courseForm">
+<input type="hidden" id="courseId">
+<div class="formgrid">
+<div><label>Titre</label><input id="courseTitle" required></div>
+<div><label>Catégorie</label><input id="courseCategory"></div>
+<div><label>Prix (FCFA)</label><input id="coursePrice" type="number" min="0" required></div>
+<div><label>Durée (heures)</label><input id="courseDuration" type="number" min="0"></div>
+<div><label>Niveau</label><input id="courseLevel" placeholder="Débutant, intermédiaire..."></div>
+<div><label>Statut</label>
+<select id="courseStatus">
+<option value="draft">Brouillon</option>
+<option value="published">Publié</option>
+<option value="unpublished">Dépublié</option>
+</select></div>
+</div>
+<label>Description</label>
+<textarea id="courseDescription"></textarea>
+<div class="actions">
+<button type="submit" class="gold">Enregistrer la formation</button>
+<button type="button" class="light" id="cancelCourse">Annuler</button>
+</div>
+</form>
+<hr>
+<div class="tablewrap">
 <table>
-<thead>
-<tr><th>Formation</th><th>Prix</th><th>Durée</th><th>Statut</th></tr>
-</thead>
-<tbody id="coursesTable">
-<tr><td colspan="4">Chargement du catalogue...</td></tr>
-</tbody>
+<thead><tr><th>Formation</th><th>Prix</th><th>Durée</th><th>Statut</th><th>Actions</th></tr></thead>
+<tbody id="coursesTable"></tbody>
 </table>
 </div>
 </section>
 
-<section class="panel">
-<h2>Accès rapides</h2>
-<div class="actions">
-<a href="index.html">Site de l'Académie</a>
-<a href="auth.html">Page de connexion</a>
+<section id="contenu" class="tab panel">
+<h2>Gestion des modules et des leçons</h2>
+<label>Choisir une formation</label>
+<select id="contentCourse"><option value="">Choisir...</option></select>
+<div id="moduleArea" class="hidden">
+<h3>Ajouter un module</h3>
+<form id="moduleForm">
+<input id="moduleTitle" placeholder="Titre du module" required>
+<textarea id="moduleDescription" placeholder="Description"></textarea>
+<button class="gold" type="submit">Ajouter le module</button>
+</form>
+<div id="modulesList"></div>
 </div>
 </section>
-</main>
 
+<section id="inscriptions" class="tab panel">
+<h2>Gestion des inscriptions</h2>
+<p class="small">Vous pouvez modifier le statut d'une inscription.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Apprenant</th><th>Formation</th><th>Statut</th><th>Date</th><th>Action</th></tr></thead>
+<tbody id="enrollmentsTable"></tbody>
+</table></div>
+</section>
+
+<section id="paiements" class="tab panel">
+<h2>Gestion des paiements</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Apprenant</th><th>Formation</th><th>Montant</th><th>Méthode</th><th>Référence</th><th>Statut</th><th>Action</th></tr></thead>
+<tbody id="paymentsTable"></tbody>
+</table></div>
+</section>
+
+<section id="utilisateurs" class="tab panel">
+<h2>Utilisateurs et formateurs</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Nom</th><th>Téléphone</th><th>Rôle</th><th>Date de création</th></tr></thead>
+<tbody id="profilesTable"></tbody>
+</table></div>
+</section>
+
+</main>
 <footer>GKIMMO — Académie Professionnelle de l'Immobilier</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const URL="https://uhrmfqsrxnmrdfiwcazm.supabase.co";
 const KEY="sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
-const client=window.supabase.createClient(URL,KEY);
+const db=window.supabase.createClient(URL,KEY);
+const $=id=>document.getElementById(id);
+const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money=value=>Number(value||0).toLocaleString("fr-FR")+" FCFA";
+let currentUser=null;
+let courses=[];
 
-const message=document.getElementById("message");
-
-function showMessage(text,error=false){
- message.textContent=text;
- message.className=error?"status error":"status";
+function message(text,error=false){
+$("message").textContent=text;
+$("message").className=error?"status error":"status";
 }
 
-async function countRows(table,elementId){
- const {count,error}=await client
-  .from(table)
-  .select("*",{count:"exact",head:true});
-
- if(error){
-  document.getElementById(elementId).textContent="—";
-  return;
- }
- document.getElementById(elementId).textContent=count ?? 0;
+async function checkAdmin(){
+const {data:{session},error}=await db.auth.getSession();
+if(error||!session){location.replace("auth.html");return false}
+const {data:profile,error:profileError}=await db.from("profiles")
+.select("full_name,role").eq("id",session.user.id).single();
+if(profileError||!profile||profile.role!=="administrateur"){
+message("Accès réservé à l'administration.",true);
+await db.auth.signOut();location.replace("auth.html");return false;
+}
+currentUser=session.user;
+$("adminName").textContent="Bienvenue, "+(profile.full_name||session.user.email);
+message("Accès administrateur vérifié.");
+return true;
 }
 
-async function loadDashboard(){
- const {data:{session},error:sessionError}=await client.auth.getSession();
-
- if(sessionError || !session){
-  window.location.replace("auth.html");
-  return;
- }
-
- const {data:profile,error:profileError}=await client
-  .from("profiles")
-  .select("full_name,role")
-  .eq("id",session.user.id)
-  .single();
-
- if(profileError || !profile || profile.role!=="administrateur"){
-  showMessage("Accès réservé à l'administration GKIMMO.",true);
-  await client.auth.signOut();
-  window.location.replace("auth.html");
-  return;
- }
-
- document.getElementById("adminName").textContent=
-  "Bienvenue, "+(profile.full_name || session.user.email);
-
- showMessage("Connexion administrateur vérifiée.");
-
- await Promise.all([
-  countRows("courses","coursesCount"),
-  countRows("course_modules","modulesCount"),
-  countRows("lessons","lessonsCount"),
-  countRows("enrollments","enrollmentsCount"),
-  countRows("profiles","profilesCount")
- ]);
-
- const {data:courses,error}=await client
-  .from("courses")
-  .select("title,price,duration,status")
-  .order("title");
-
- const tbody=document.getElementById("coursesTable");
-
- if(error){
-  tbody.innerHTML="<tr><td colspan='4'>Impossible de charger le catalogue.</td></tr>";
-  return;
- }
-
- if(!courses || courses.length===0){
-  tbody.innerHTML="<tr><td colspan='4'>Aucune formation disponible.</td></tr>";
-  return;
- }
-
- tbody.innerHTML="";
-
- courses.forEach(course=>{
-  const tr=document.createElement("tr");
-
-  [course.title || "Sans titre",
-   course.price==null?"—":Number(course.price).toLocaleString("fr-FR")+" FCFA",
-   course.duration==null?"—":course.duration,
-   course.status || "Non renseigné"
-  ].forEach(value=>{
-   const td=document.createElement("td");
-   td.textContent=value;
-   tr.appendChild(td);
-  });
-
-  tbody.appendChild(tr);
- });
+async function count(table,id){
+const {count,error}=await db.from(table).select("*",{count:"exact",head:true});
+$(id).textContent=error?"Erreur":count??0;
 }
 
-document.getElementById("logoutBtn").addEventListener("click",async()=>{
- const {error}=await client.auth.signOut();
- if(error){
-  showMessage("Erreur lors de la déconnexion.",true);
-  return;
- }
- window.location.replace("auth.html");
+async function loadStats(){
+await Promise.all([
+count("courses","coursesCount"),
+count("course_modules","modulesCount"),
+count("lessons","lessonsCount"),
+count("enrollments","enrollmentsCount"),
+count("profiles","profilesCount"),
+count("payments","paymentsCount")
+]);
+}
+
+function resetCourse(){
+$("courseForm").reset();$("courseId").value="";
+}
+
+async function loadCourses(){
+const {data,error}=await db.from("courses")
+.select("id,title,description,category,price,duration_hours,level,status")
+.order("title");
+if(error){message("Erreur de chargement des formations : "+error.message,true);return}
+courses=data||[];
+$("coursesTable").innerHTML="";
+$("contentCourse").innerHTML='<option value="">Choisir une formation...</option>';
+courses.forEach(c=>{
+$("coursesTable").insertAdjacentHTML("beforeend",`
+<tr>
+<td>${esc(c.title)}</td><td>${money(c.price)}</td>
+<td>${esc(c.duration_hours??"—")} h</td><td>${esc(c.status)}</td>
+<td><div class="actions">
+<button class="light" onclick="editCourse('${c.id}')">Modifier</button>
+<button class="light" onclick="toggleCourse('${c.id}')">${c.status==="published"?"Dépublier":"Publier"}</button>
+<button class="danger" onclick="deleteCourse('${c.id}')">Supprimer</button>
+</div></td></tr>`);
+$("contentCourse").insertAdjacentHTML("beforeend",`<option value="${c.id}">${esc(c.title)}</option>`);
+});
+}
+
+window.editCourse=id=>{
+const c=courses.find(x=>x.id===id);if(!c)return;
+$("courseId").value=c.id;
+$("courseTitle").value=c.title||"";
+$("courseCategory").value=c.category||"";
+$("coursePrice").value=c.price??0;
+$("courseDuration").value=c.duration_hours??"";
+$("courseLevel").value=c.level||"";
+$("courseStatus").value=c.status||"draft";
+$("courseDescription").value=c.description||"";
+window.scrollTo({top:0,behavior:"smooth"});
+};
+
+window.toggleCourse=async id=>{
+const c=courses.find(x=>x.id===id);if(!c)return;
+const status=c.status==="published"?"unpublished":"published";
+const {error}=await db.from("courses").update({status}).eq("id",id);
+if(error){message("Modification impossible : "+error.message,true);return}
+message("Statut de la formation modifié.");await refresh();
+};
+
+window.deleteCourse=async id=>{
+if(!confirm("Supprimer cette formation ? Cette opération peut échouer si des modules ou inscriptions y sont liés."))return;
+const {error}=await db.from("courses").delete().eq("id",id);
+if(error){message("Suppression impossible : "+error.message,true);return}
+message("Formation supprimée.");await refresh();
+};
+
+$("courseForm").addEventListener("submit",async e=>{
+e.preventDefault();
+const id=$("courseId").value;
+const record={
+title:$("courseTitle").value.trim(),
+category:$("courseCategory").value.trim(),
+price:Number($("coursePrice").value),
+duration_hours:$("courseDuration").value?Number($("courseDuration").value):null,
+level:$("courseLevel").value.trim(),
+status:$("courseStatus").value,
+description:$("courseDescription").value.trim()
+};
+const result=id
+?await db.from("courses").update(record).eq("id",id)
+:await db.from("courses").insert(record);
+if(result.error){message("Enregistrement impossible : "+result.error.message,true);return}
+message("Formation enregistrée.");resetCourse();await refresh();
+});
+$("cancelCourse").onclick=resetCourse;
+
+async function loadModules(courseId){
+const {data:modules,error}=await db.from("course_modules")
+.select("id,title,description,position").eq("course_id",courseId).order("position");
+if(error){message("Erreur modules : "+error.message,true);return}
+$("modulesList").innerHTML="";
+for(const m of modules||[]){
+const {data:lessons}=await db.from("lessons")
+.select("id,title,position,is_free").eq("module_id",m.id).order("position");
+const box=document.createElement("div");
+box.className="panel";
+box.innerHTML=`<h3>${esc(m.title)}</h3>
+<p>${esc(m.description||"")}</p>
+<div class="actions">
+<button class="light" onclick="renameModule('${m.id}')">Renommer</button>
+<button class="danger" onclick="deleteModule('${m.id}')">Supprimer le module</button>
+</div>
+<h4>Leçons</h4>
+<div>${(lessons||[]).map(l=>`<p>${esc(l.title)} ${l.is_free?"(Gratuite)":""}
+<button class="light" onclick="renameLesson('${l.id}')">Modifier</button>
+<button class="danger" onclick="deleteLesson('${l.id}')">Supprimer</button></p>`).join("")}</div>
+<form onsubmit="addLesson(event,'${m.id}')">
+<input name="title" placeholder="Titre de la nouvelle leçon" required>
+<textarea name="content" placeholder="Contenu de la leçon"></textarea>
+<input name="video_url" placeholder="Lien vidéo (facultatif)">
+<input name="document_url" placeholder="Lien du document (facultatif)">
+<label><input name="is_free" type="checkbox" style="width:auto"> Leçon gratuite</label>
+<button class="gold">Ajouter une leçon</button>
+</form>`;
+$("modulesList").appendChild(box);
+}
+}
+
+$("contentCourse").onchange=()=>{
+const id=$("contentCourse").value;
+$("moduleArea").classList.toggle("hidden",!id);
+if(id)loadModules(id);
+};
+
+$("moduleForm").addEventListener("submit",async e=>{
+e.preventDefault();
+const courseId=$("contentCourse").value;if(!courseId)return;
+const title=$("moduleTitle").value.trim();
+const description=$("moduleDescription").value.trim();
+const {data:existing}=await db.from("course_modules").select("position").eq("course_id",courseId).order("position",{ascending:false}).limit(1);
+const position=(existing?.[0]?.position||0)+1;
+const {error}=await db.from("course_modules").insert({course_id:courseId,title,description,position});
+if(error){message("Ajout du module impossible : "+error.message,true);return}
+$("moduleForm").reset();message("Module ajouté.");await loadModules(courseId);await loadStats();
 });
 
-loadDashboard();
+window.addLesson=async(e,moduleId)=>{
+e.preventDefault();
+const f=e.target;
+const {data:existing}=await db.from("lessons").select("position").eq("module_id",moduleId).order("position",{ascending:false}).limit(1);
+const position=(existing?.[0]?.position||0)+1;
+const record={module_id:moduleId,title:f.title.value.trim(),content:f.content.value,
+video_url:f.video_url.value||null,document_url:f.document_url.value||null,
+is_free:f.is_free.checked,position};
+const {error}=await db.from("lessons").insert(record);
+if(error){message("Ajout de la leçon impossible : "+error.message,true);return}
+message("Leçon ajoutée.");await loadModules($("contentCourse").value);await loadStats();
+};
+
+window.renameModule=async id=>{
+const title=prompt("Nouveau titre du module :");if(!title)return;
+const {error}=await db.from("course_modules").update({title}).eq("id",id);
+if(error){message(error.message,true);return}
+await loadModules($("contentCourse").value);
+};
+window.deleteModule=async id=>{
+if(!confirm("Supprimer ce module et ses leçons ?"))return;
+const {error}=await db.from("course_modules").delete().eq("id",id);
+if(error){message("Suppression impossible : "+error.message,true);return}
+await loadModules($("contentCourse").value);await loadStats();
+};
+window.renameLesson=async id=>{
+const title=prompt("Nouveau titre de la leçon :");if(!title)return;
+const {error}=await db.from("lessons").update({title}).eq("id",id);
+if(error){message(error.message,true);return}
+await loadModules($("contentCourse").value);
+};
+window.deleteLesson=async id=>{
+if(!confirm("Supprimer cette leçon ?"))return;
+const {error}=await db.from("lessons").delete().eq("id",id);
+if(error){message("Suppression impossible : "+error.message,true);return}
+await loadModules($("contentCourse").value);await loadStats();
+};
+
+async function loadProfiles(){
+const {data,error}=await db.from("profiles").select("id,full_name,phone,role,created_at").order("created_at",{ascending:false});
+if(error){$("profilesTable").innerHTML="<tr><td colspan='4'>"+esc(error.message)+"</td></tr>";return}
+$("profilesTable").innerHTML=(data||[]).map(p=>`<tr><td>${esc(p.full_name)}</td><td>${esc(p.phone||"—")}</td><td>${esc(p.role)}</td><td>${p.created_at?new Date(p.created_at).toLocaleDateString("fr-FR"):"—"}</td></tr>`).join("");
+}
+
+async function loadEnrollments(){
+const {data,error}=await db.from("enrollments").select("id,user_id,course_id,status,enrolled_at").order("enrolled_at",{ascending:false});
+if(error){$("enrollmentsTable").innerHTML="<tr><td colspan='5'>"+esc(error.message)+"</td></tr>";return}
+const rows=data||[];
+const ids=[...new Set(rows.map(r=>r.user_id).filter(Boolean))];
+const cids=[...new Set(rows.map(r=>r.course_id).filter(Boolean))];
+const [p,c]=await Promise.all([
+ids.length?db.from("profiles").select("id,full_name").in("id",ids):Promise.resolve({data:[]}),
+cids.length?db.from("courses").select("id,title").in("id",cids):Promise.resolve({data:[]})
+]);
+const names=Object.fromEntries((p.data||[]).map(x=>[x.id,x.full_name]));
+const titles=Object.fromEntries((c.data||[]).map(x=>[x.id,x.title]));
+$("enrollmentsTable").innerHTML=rows.map(r=>`<tr>
+<td>${esc(names[r.user_id]||r.user_id)}</td><td>${esc(titles[r.course_id]||"—")}</td>
+<td>${esc(r.status)}</td><td>${r.enrolled_at?new Date(r.enrolled_at).toLocaleDateString("fr-FR"):"—"}</td>
+<td><select onchange="updateEnrollment('${r.id}',this.value)">
+${["pending","approved","active","completed","rejected","cancelled"].map(s=>`<option ${r.status===s?"selected":""}>${s}</option>`).join("")}
+</select></td></tr>`).join("");
+}
+window.updateEnrollment=async(id,status)=>{
+const {error}=await db.from("enrollments").update({status}).eq("id",id);
+if(error){message("Modification impossible : "+error.message,true);return}
+message("Inscription mise à jour.");await loadEnrollments();await loadStats();
+};
+
+async function loadPayments(){
+const {data,error}=await db.from("payments").select("id,user_id,course_id,amount,currency,payment_method,transaction_reference,status,created_at").order("created_at",{ascending:false});
+if(error){$("paymentsTable").innerHTML="<tr><td colspan='7'>"+esc(error.message)+"</td></tr>";return}
+const rows=data||[];
+const ids=[...new Set(rows.map(r=>r.user_id).filter(Boolean))];
+const cids=[...new Set(rows.map(r=>r.course_id).filter(Boolean))];
+const [p,c]=await Promise.all([
+ids.length?db.from("profiles").select("id,full_name").in("id",ids):Promise.resolve({data:[]}),
+cids.length?db.from("courses").select("id,title").in("id",cids):Promise.resolve({data:[]})
+]);
+const names=Object.fromEntries((p.data||[]).map(x=>[x.id,x.full_name]));
+const titles=Object.fromEntries((c.data||[]).map(x=>[x.id,x.title]));
+$("paymentsTable").innerHTML=rows.map(r=>`<tr>
+<td>${esc(names[r.user_id]||r.user_id)}</td><td>${esc(titles[r.course_id]||"—")}</td>
+<td>${money(r.amount)}</td><td>${esc(r.payment_method||"—")}</td>
+<td>${esc(r.transaction_reference||"—")}</td><td>${esc(r.status)}</td>
+<td><select onchange="updatePayment('${r.id}',this.value)">
+${["pending","approved","paid","rejected","failed","cancelled"].map(s=>`<option ${r.status===s?"selected":""}>${s}</option>`).join("")}
+</select></td></tr>`).join("");
+}
+window.updatePayment=async(id,status)=>{
+const {error}=await db.from("payments").update({status}).eq("id",id);
+if(error){message("Modification impossible : "+error.message,true);return}
+message("Paiement mis à jour.");await loadPayments();await loadStats();
+};
+
+async function refresh(){
+await Promise.all([loadStats(),loadCourses(),loadProfiles(),loadEnrollments(),loadPayments()]);
+}
+
+document.querySelectorAll("nav button").forEach(btn=>{
+btn.onclick=()=>{
+document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+btn.classList.add("active");$(btn.dataset.tab).classList.add("active");
+};
+});
+
+$("logoutBtn").onclick=async()=>{
+await db.auth.signOut();location.replace("auth.html");
+};
+
+(async()=>{if(await checkAdmin())await refresh()})();
 </script>
 </body>
-</html>
+                                                                    </html>
+                                                                    
