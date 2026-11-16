@@ -5,11 +5,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Administration | API-GKIMMO</title>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:#f5f3ee;color:#302820}
 header{background:#38231f;color:white;padding:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 button,.btn{border:0;border-radius:6px;padding:10px 14px;cursor:pointer;font-weight:bold;background:#38231f;color:white}
+button:disabled{opacity:.55;cursor:wait}
 button.gold{background:#d6ad60;color:#302820}
 button.danger{background:#a52d25}
 button.light{background:#eee7dc;color:#38231f}
@@ -22,7 +24,8 @@ h1,h2{color:#432c23}
 nav{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}
 nav button{background:#e9e2d8;color:#38231f}
 nav button.active{background:#38231f;color:white}
-.tab{display:none}.tab.active{display:block}
+.tab{display:none}
+.tab.active{display:block}
 input,select,textarea{width:100%;padding:11px;margin:6px 0 12px;border:1px solid #d9d0c4;border-radius:6px;font:inherit}
 textarea{min-height:90px}
 label{font-weight:bold;font-size:14px}
@@ -32,24 +35,29 @@ th{background:#f8f5ef}
 .tablewrap{overflow-x:auto}
 .formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
 .actions{display:flex;gap:6px;flex-wrap:wrap}
-.status{padding:12px;background:#f3ead8;border-radius:7px;margin:12px 0}
+.status{padding:12px;background:#f3ead8;border-radius:7px;margin:12px 0;overflow-wrap:anywhere}
 .error{background:#fce8e6;color:#8b2118}
+.success{background:#e5f5e9;color:#17613a}
 .small{font-size:12px;color:#766d65}
 .hidden{display:none}
+.empty{text-align:center;color:#766d65;padding:20px}
 footer{text-align:center;padding:25px;color:#766d65}
 </style>
 </head>
+
 <body>
+
 <header>
 <strong>API-GKIMMO | Administration</strong>
 <button id="logoutBtn" class="gold">Déconnexion</button>
 </header>
 
 <main>
+
 <section class="panel">
 <h1>Tableau de bord GKIMMO</h1>
 <p id="adminName">Vérification du compte...</p>
-<div id="message" class="status">Chargement...</div>
+<div id="message" class="status">Initialisation...</div>
 </section>
 
 <section class="stats">
@@ -71,33 +79,45 @@ footer{text-align:center;padding:25px;color:#766d65}
 
 <section id="formations" class="tab active panel">
 <h2>Gestion des formations</h2>
+
 <form id="courseForm">
 <input type="hidden" id="courseId">
+
 <div class="formgrid">
 <div><label>Titre</label><input id="courseTitle" required></div>
 <div><label>Catégorie</label><input id="courseCategory"></div>
 <div><label>Prix (FCFA)</label><input id="coursePrice" type="number" min="0" required></div>
 <div><label>Durée (heures)</label><input id="courseDuration" type="number" min="0"></div>
 <div><label>Niveau</label><input id="courseLevel" placeholder="Débutant, intermédiaire..."></div>
-<div><label>Statut</label>
+<div>
+<label>Statut</label>
 <select id="courseStatus">
 <option value="draft">Brouillon</option>
 <option value="published">Publié</option>
 <option value="unpublished">Dépublié</option>
-</select></div>
+</select>
 </div>
+</div>
+
 <label>Description</label>
 <textarea id="courseDescription"></textarea>
+
 <div class="actions">
 <button type="submit" class="gold">Enregistrer la formation</button>
 <button type="button" class="light" id="cancelCourse">Annuler</button>
 </div>
 </form>
+
 <hr>
+
 <div class="tablewrap">
 <table>
-<thead><tr><th>Formation</th><th>Prix</th><th>Durée</th><th>Statut</th><th>Actions</th></tr></thead>
-<tbody id="coursesTable"></tbody>
+<thead>
+<tr><th>Formation</th><th>Prix</th><th>Durée</th><th>Statut</th><th>Actions</th></tr>
+</thead>
+<tbody id="coursesTable">
+<tr><td colspan="5" class="empty">Chargement des formations...</td></tr>
+</tbody>
 </table>
 </div>
 </section>
@@ -105,7 +125,10 @@ footer{text-align:center;padding:25px;color:#766d65}
 <section id="contenu" class="tab panel">
 <h2>Gestion des modules et des leçons</h2>
 <label>Choisir une formation</label>
-<select id="contentCourse"><option value="">Choisir...</option></select>
+<select id="contentCourse">
+<option value="">Choisir une formation...</option>
+</select>
+
 <div id="moduleArea" class="hidden">
 <h3>Ajouter un module</h3>
 <form id="moduleForm">
@@ -120,315 +143,521 @@ footer{text-align:center;padding:25px;color:#766d65}
 <section id="inscriptions" class="tab panel">
 <h2>Gestion des inscriptions</h2>
 <p class="small">Vous pouvez modifier le statut d'une inscription.</p>
-<div class="tablewrap"><table>
+<div class="tablewrap">
+<table>
 <thead><tr><th>Apprenant</th><th>Formation</th><th>Statut</th><th>Date</th><th>Action</th></tr></thead>
-<tbody id="enrollmentsTable"></tbody>
-</table></div>
+<tbody id="enrollmentsTable"><tr><td colspan="5" class="empty">Chargement...</td></tr></tbody>
+</table>
+</div>
 </section>
 
 <section id="paiements" class="tab panel">
 <h2>Gestion des paiements</h2>
-<div class="tablewrap"><table>
+<div class="tablewrap">
+<table>
 <thead><tr><th>Apprenant</th><th>Formation</th><th>Montant</th><th>Méthode</th><th>Référence</th><th>Statut</th><th>Action</th></tr></thead>
-<tbody id="paymentsTable"></tbody>
-</table></div>
+<tbody id="paymentsTable"><tr><td colspan="7" class="empty">Chargement...</td></tr></tbody>
+</table>
+</div>
 </section>
 
 <section id="utilisateurs" class="tab panel">
 <h2>Utilisateurs et formateurs</h2>
-<div class="tablewrap"><table>
+<div class="tablewrap">
+<table>
 <thead><tr><th>Nom</th><th>Téléphone</th><th>Rôle</th><th>Date de création</th></tr></thead>
-<tbody id="profilesTable"></tbody>
-</table></div>
+<tbody id="profilesTable"><tr><td colspan="4" class="empty">Chargement...</td></tr></tbody>
+</table>
+</div>
 </section>
 
 </main>
+
 <footer>GKIMMO — Académie Professionnelle de l'Immobilier</footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const URL="https://uhrmfqsrxnmrdfiwcazm.supabase.co";
-const KEY="sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
-const db=window.supabase.createClient(URL,KEY);
-const $=id=>document.getElementById(id);
-const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const money=value=>Number(value||0).toLocaleString("fr-FR")+" FCFA";
-let currentUser=null;
-let courses=[];
+const SUPABASE_URL = "https://uhrmfqsrxnmrdfiwcazm.supabase.co";
+const SUPABASE_KEY = "sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
 
-function message(text,error=false){
-$("message").textContent=text;
-$("message").className=error?"status error":"status";
+const $ = id => document.getElementById(id);
+
+const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({
+"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[c]));
+
+const money = value => Number(value || 0).toLocaleString("fr-FR") + " FCFA";
+
+let db = null;
+let currentUser = null;
+let courses = [];
+
+function message(text, type = "normal") {
+  $("message").textContent = text;
+  $("message").className = "status" +
+    (type === "error" ? " error" : type === "success" ? " success" : "");
 }
 
-async function checkAdmin(){
-const {data:{session},error}=await db.auth.getSession();
-if(error||!session){location.replace("auth.html");return false}
-const {data:profile,error:profileError}=await db.from("profiles")
-.select("full_name,role").eq("id",session.user.id).single();
-if(profileError||!profile||profile.role!=="administrateur"){
-message("Accès réservé à l'administration.",true);
-await db.auth.signOut();location.replace("auth.html");return false;
-}
-currentUser=session.user;
-$("adminName").textContent="Bienvenue, "+(profile.full_name||session.user.email);
-message("Accès administrateur vérifié.");
-return true;
+function setTableMessage(id, columns, text) {
+  $(id).innerHTML =
+    `<tr><td colspan="${columns}" class="empty">${esc(text)}</td></tr>`;
 }
 
-async function count(table,id){
-const {count,error}=await db.from(table).select("*",{count:"exact",head:true});
-$(id).textContent=error?"Erreur":count??0;
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error("Chargement de la bibliothèque impossible."));
+    document.head.appendChild(script);
+  });
 }
 
-async function loadStats(){
-await Promise.all([
-count("courses","coursesCount"),
-count("course_modules","modulesCount"),
-count("lessons","lessonsCount"),
-count("enrollments","enrollmentsCount"),
-count("profiles","profilesCount"),
-count("payments","paymentsCount")
-]);
+async function initializeSupabase() {
+  try {
+    try {
+      await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
+    } catch (e) {
+      await loadScript("https://unpkg.com/@supabase/supabase-js@2");
+    }
+
+    if (!window.supabase || !window.supabase.createClient) {
+      throw new Error("La bibliothèque Supabase est indisponible.");
+    }
+
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    return true;
+  } catch (error) {
+    message("Connexion à Supabase impossible : " + error.message, "error");
+    return false;
+  }
 }
 
-function resetCourse(){
-$("courseForm").reset();$("courseId").value="";
+async function checkAdmin() {
+  const { data, error } = await db.auth.getSession();
+
+  if (error || !data.session) {
+    location.replace("auth.html");
+    return false;
+  }
+
+  const session = data.session;
+
+  const { data: profile, error: profileError } = await db
+    .from("profiles")
+    .select("full_name,role")
+    .eq("id", session.user.id)
+    .single();
+
+  if (profileError || !profile || profile.role !== "administrateur") {
+    message("Accès réservé à l'administration. " +
+      (profileError ? profileError.message : ""), "error");
+    await db.auth.signOut();
+    location.replace("auth.html");
+    return false;
+  }
+
+  currentUser = session.user;
+  $("adminName").textContent =
+    "Bienvenue, " + (profile.full_name || session.user.email);
+
+  message("Accès administrateur vérifié.", "success");
+  return true;
 }
 
-async function loadCourses(){
-const {data,error}=await db.from("courses")
-.select("id,title,description,category,price,duration_hours,level,status")
-.order("title");
-if(error){message("Erreur de chargement des formations : "+error.message,true);return}
-courses=data||[];
-$("coursesTable").innerHTML="";
-$("contentCourse").innerHTML='<option value="">Choisir une formation...</option>';
-courses.forEach(c=>{
-$("coursesTable").insertAdjacentHTML("beforeend",`
-<tr>
-<td>${esc(c.title)}</td><td>${money(c.price)}</td>
-<td>${esc(c.duration_hours??"—")} h</td><td>${esc(c.status)}</td>
-<td><div class="actions">
-<button class="light" onclick="editCourse('${c.id}')">Modifier</button>
-<button class="light" onclick="toggleCourse('${c.id}')">${c.status==="published"?"Dépublier":"Publier"}</button>
-<button class="danger" onclick="deleteCourse('${c.id}')">Supprimer</button>
-</div></td></tr>`);
-$("contentCourse").insertAdjacentHTML("beforeend",`<option value="${c.id}">${esc(c.title)}</option>`);
-});
+async function count(table, id) {
+  const { count, error } = await db
+    .from(table)
+    .select("*", { count: "exact", head: true });
+
+  $(id).textContent = error ? "Erreur" : (count ?? 0);
+
+  if (error) console.error("Erreur compteur " + table, error);
 }
 
-window.editCourse=id=>{
-const c=courses.find(x=>x.id===id);if(!c)return;
-$("courseId").value=c.id;
-$("courseTitle").value=c.title||"";
-$("courseCategory").value=c.category||"";
-$("coursePrice").value=c.price??0;
-$("courseDuration").value=c.duration_hours??"";
-$("courseLevel").value=c.level||"";
-$("courseStatus").value=c.status||"draft";
-$("courseDescription").value=c.description||"";
-window.scrollTo({top:0,behavior:"smooth"});
-};
-
-window.toggleCourse=async id=>{
-const c=courses.find(x=>x.id===id);if(!c)return;
-const status=c.status==="published"?"unpublished":"published";
-const {error}=await db.from("courses").update({status}).eq("id",id);
-if(error){message("Modification impossible : "+error.message,true);return}
-message("Statut de la formation modifié.");await refresh();
-};
-
-window.deleteCourse=async id=>{
-if(!confirm("Supprimer cette formation ? Cette opération peut échouer si des modules ou inscriptions y sont liés."))return;
-const {error}=await db.from("courses").delete().eq("id",id);
-if(error){message("Suppression impossible : "+error.message,true);return}
-message("Formation supprimée.");await refresh();
-};
-
-$("courseForm").addEventListener("submit",async e=>{
-e.preventDefault();
-const id=$("courseId").value;
-const record={
-title:$("courseTitle").value.trim(),
-category:$("courseCategory").value.trim(),
-price:Number($("coursePrice").value),
-duration_hours:$("courseDuration").value?Number($("courseDuration").value):null,
-level:$("courseLevel").value.trim(),
-status:$("courseStatus").value,
-description:$("courseDescription").value.trim()
-};
-const result=id
-?await db.from("courses").update(record).eq("id",id)
-:await db.from("courses").insert(record);
-if(result.error){message("Enregistrement impossible : "+result.error.message,true);return}
-message("Formation enregistrée.");resetCourse();await refresh();
-});
-$("cancelCourse").onclick=resetCourse;
-
-async function loadModules(courseId){
-const {data:modules,error}=await db.from("course_modules")
-.select("id,title,description,position").eq("course_id",courseId).order("position");
-if(error){message("Erreur modules : "+error.message,true);return}
-$("modulesList").innerHTML="";
-for(const m of modules||[]){
-const {data:lessons}=await db.from("lessons")
-.select("id,title,position,is_free").eq("module_id",m.id).order("position");
-const box=document.createElement("div");
-box.className="panel";
-box.innerHTML=`<h3>${esc(m.title)}</h3>
-<p>${esc(m.description||"")}</p>
-<div class="actions">
-<button class="light" onclick="renameModule('${m.id}')">Renommer</button>
-<button class="danger" onclick="deleteModule('${m.id}')">Supprimer le module</button>
-</div>
-<h4>Leçons</h4>
-<div>${(lessons||[]).map(l=>`<p>${esc(l.title)} ${l.is_free?"(Gratuite)":""}
-<button class="light" onclick="renameLesson('${l.id}')">Modifier</button>
-<button class="danger" onclick="deleteLesson('${l.id}')">Supprimer</button></p>`).join("")}</div>
-<form onsubmit="addLesson(event,'${m.id}')">
-<input name="title" placeholder="Titre de la nouvelle leçon" required>
-<textarea name="content" placeholder="Contenu de la leçon"></textarea>
-<input name="video_url" placeholder="Lien vidéo (facultatif)">
-<input name="document_url" placeholder="Lien du document (facultatif)">
-<label><input name="is_free" type="checkbox" style="width:auto"> Leçon gratuite</label>
-<button class="gold">Ajouter une leçon</button>
-</form>`;
-$("modulesList").appendChild(box);
-}
+async function loadStats() {
+  await Promise.all([
+    count("courses", "coursesCount"),
+    count("course_modules", "modulesCount"),
+    count("lessons", "lessonsCount"),
+    count("enrollments", "enrollmentsCount"),
+    count("profiles", "profilesCount"),
+    count("payments", "paymentsCount")
+  ]);
 }
 
-$("contentCourse").onchange=()=>{
-const id=$("contentCourse").value;
-$("moduleArea").classList.toggle("hidden",!id);
-if(id)loadModules(id);
-};
-
-$("moduleForm").addEventListener("submit",async e=>{
-e.preventDefault();
-const courseId=$("contentCourse").value;if(!courseId)return;
-const title=$("moduleTitle").value.trim();
-const description=$("moduleDescription").value.trim();
-const {data:existing}=await db.from("course_modules").select("position").eq("course_id",courseId).order("position",{ascending:false}).limit(1);
-const position=(existing?.[0]?.position||0)+1;
-const {error}=await db.from("course_modules").insert({course_id:courseId,title,description,position});
-if(error){message("Ajout du module impossible : "+error.message,true);return}
-$("moduleForm").reset();message("Module ajouté.");await loadModules(courseId);await loadStats();
-});
-
-window.addLesson=async(e,moduleId)=>{
-e.preventDefault();
-const f=e.target;
-const {data:existing}=await db.from("lessons").select("position").eq("module_id",moduleId).order("position",{ascending:false}).limit(1);
-const position=(existing?.[0]?.position||0)+1;
-const record={module_id:moduleId,title:f.title.value.trim(),content:f.content.value,
-video_url:f.video_url.value||null,document_url:f.document_url.value||null,
-is_free:f.is_free.checked,position};
-const {error}=await db.from("lessons").insert(record);
-if(error){message("Ajout de la leçon impossible : "+error.message,true);return}
-message("Leçon ajoutée.");await loadModules($("contentCourse").value);await loadStats();
-};
-
-window.renameModule=async id=>{
-const title=prompt("Nouveau titre du module :");if(!title)return;
-const {error}=await db.from("course_modules").update({title}).eq("id",id);
-if(error){message(error.message,true);return}
-await loadModules($("contentCourse").value);
-};
-window.deleteModule=async id=>{
-if(!confirm("Supprimer ce module et ses leçons ?"))return;
-const {error}=await db.from("course_modules").delete().eq("id",id);
-if(error){message("Suppression impossible : "+error.message,true);return}
-await loadModules($("contentCourse").value);await loadStats();
-};
-window.renameLesson=async id=>{
-const title=prompt("Nouveau titre de la leçon :");if(!title)return;
-const {error}=await db.from("lessons").update({title}).eq("id",id);
-if(error){message(error.message,true);return}
-await loadModules($("contentCourse").value);
-};
-window.deleteLesson=async id=>{
-if(!confirm("Supprimer cette leçon ?"))return;
-const {error}=await db.from("lessons").delete().eq("id",id);
-if(error){message("Suppression impossible : "+error.message,true);return}
-await loadModules($("contentCourse").value);await loadStats();
-};
-
-async function loadProfiles(){
-const {data,error}=await db.from("profiles").select("id,full_name,phone,role,created_at").order("created_at",{ascending:false});
-if(error){$("profilesTable").innerHTML="<tr><td colspan='4'>"+esc(error.message)+"</td></tr>";return}
-$("profilesTable").innerHTML=(data||[]).map(p=>`<tr><td>${esc(p.full_name)}</td><td>${esc(p.phone||"—")}</td><td>${esc(p.role)}</td><td>${p.created_at?new Date(p.created_at).toLocaleDateString("fr-FR"):"—"}</td></tr>`).join("");
+function resetCourse() {
+  $("courseForm").reset();
+  $("courseId").value = "";
 }
 
-async function loadEnrollments(){
-const {data,error}=await db.from("enrollments").select("id,user_id,course_id,status,enrolled_at").order("enrolled_at",{ascending:false});
-if(error){$("enrollmentsTable").innerHTML="<tr><td colspan='5'>"+esc(error.message)+"</td></tr>";return}
-const rows=data||[];
-const ids=[...new Set(rows.map(r=>r.user_id).filter(Boolean))];
-const cids=[...new Set(rows.map(r=>r.course_id).filter(Boolean))];
-const [p,c]=await Promise.all([
-ids.length?db.from("profiles").select("id,full_name").in("id",ids):Promise.resolve({data:[]}),
-cids.length?db.from("courses").select("id,title").in("id",cids):Promise.resolve({data:[]})
-]);
-const names=Object.fromEntries((p.data||[]).map(x=>[x.id,x.full_name]));
-const titles=Object.fromEntries((c.data||[]).map(x=>[x.id,x.title]));
-$("enrollmentsTable").innerHTML=rows.map(r=>`<tr>
-<td>${esc(names[r.user_id]||r.user_id)}</td><td>${esc(titles[r.course_id]||"—")}</td>
-<td>${esc(r.status)}</td><td>${r.enrolled_at?new Date(r.enrolled_at).toLocaleDateString("fr-FR"):"—"}</td>
-<td><select onchange="updateEnrollment('${r.id}',this.value)">
-${["pending","approved","active","completed","rejected","cancelled"].map(s=>`<option ${r.status===s?"selected":""}>${s}</option>`).join("")}
-</select></td></tr>`).join("");
-}
-window.updateEnrollment=async(id,status)=>{
-const {error}=await db.from("enrollments").update({status}).eq("id",id);
-if(error){message("Modification impossible : "+error.message,true);return}
-message("Inscription mise à jour.");await loadEnrollments();await loadStats();
-};
+async function loadCourses() {
+  setTableMessage("coursesTable", 5, "Chargement des formations...");
 
-async function loadPayments(){
-const {data,error}=await db.from("payments").select("id,user_id,course_id,amount,currency,payment_method,transaction_reference,status,created_at").order("created_at",{ascending:false});
-if(error){$("paymentsTable").innerHTML="<tr><td colspan='7'>"+esc(error.message)+"</td></tr>";return}
-const rows=data||[];
-const ids=[...new Set(rows.map(r=>r.user_id).filter(Boolean))];
-const cids=[...new Set(rows.map(r=>r.course_id).filter(Boolean))];
-const [p,c]=await Promise.all([
-ids.length?db.from("profiles").select("id,full_name").in("id",ids):Promise.resolve({data:[]}),
-cids.length?db.from("courses").select("id,title").in("id",cids):Promise.resolve({data:[]})
-]);
-const names=Object.fromEntries((p.data||[]).map(x=>[x.id,x.full_name]));
-const titles=Object.fromEntries((c.data||[]).map(x=>[x.id,x.title]));
-$("paymentsTable").innerHTML=rows.map(r=>`<tr>
-<td>${esc(names[r.user_id]||r.user_id)}</td><td>${esc(titles[r.course_id]||"—")}</td>
-<td>${money(r.amount)}</td><td>${esc(r.payment_method||"—")}</td>
-<td>${esc(r.transaction_reference||"—")}</td><td>${esc(r.status)}</td>
-<td><select onchange="updatePayment('${r.id}',this.value)">
-${["pending","approved","paid","rejected","failed","cancelled"].map(s=>`<option ${r.status===s?"selected":""}>${s}</option>`).join("")}
-</select></td></tr>`).join("");
-}
-window.updatePayment=async(id,status)=>{
-const {error}=await db.from("payments").update({status}).eq("id",id);
-if(error){message("Modification impossible : "+error.message,true);return}
-message("Paiement mis à jour.");await loadPayments();await loadStats();
-};
+  const { data, error } = await db
+    .from("courses")
+    .select("id,title,description,category,price,duration_hours,level,status")
+    .order("title");
 
-async function refresh(){
-await Promise.all([loadStats(),loadCourses(),loadProfiles(),loadEnrollments(),loadPayments()]);
+  if (error) {
+    setTableMessage("coursesTable", 5, "Erreur : " + error.message);
+    message("Erreur de chargement des formations : " + error.message, "error");
+    console.error("loadCourses:", error);
+    return;
+  }
+
+  courses = data || [];
+
+  $("coursesTable").innerHTML = "";
+  $("contentCourse").innerHTML =
+    '<option value="">Choisir une formation...</option>';
+
+  if (!courses.length) {
+    setTableMessage("coursesTable", 5, "Aucune formation trouvée.");
+  }
+
+  courses.forEach(c => {
+    $("coursesTable").insertAdjacentHTML("beforeend", `
+      <tr>
+        <td>${esc(c.title)}</td>
+        <td>${money(c.price)}</td>
+        <td>${esc(c.duration_hours ?? "—")} h</td>
+        <td>${esc(c.status)}</td>
+        <td>
+          <div class="actions">
+            <button class="light" onclick="editCourse('${c.id}')">Modifier</button>
+            <button class="light" onclick="toggleCourse('${c.id}')">
+              ${c.status === "published" ? "Dépublier" : "Publier"}
+            </button>
+            <button class="danger" onclick="deleteCourse('${c.id}')">Supprimer</button>
+          </div>
+        </td>
+      </tr>
+    `);
+
+    $("contentCourse").insertAdjacentHTML("beforeend",
+      `<option value="${c.id}">${esc(c.title)}</option>`);
+  });
 }
 
-document.querySelectorAll("nav button").forEach(btn=>{
-btn.onclick=()=>{
-document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
-document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-btn.classList.add("active");$(btn.dataset.tab).classList.add("active");
+window.editCourse = id => {
+  const c = courses.find(x => x.id === id);
+  if (!c) return;
+
+  $("courseId").value = c.id;
+  $("courseTitle").value = c.title || "";
+  $("courseCategory").value = c.category || "";
+  $("coursePrice").value = c.price ?? 0;
+  $("courseDuration").value = c.duration_hours ?? "";
+  $("courseLevel").value = c.level || "";
+  $("courseStatus").value = c.status || "draft";
+  $("courseDescription").value = c.description || "";
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
 };
+
+window.toggleCourse = async id => {
+  const c = courses.find(x => x.id === id);
+  if (!c) return;
+
+  const status = c.status === "published" ? "unpublished" : "published";
+
+  const { error } = await db.from("courses").update({ status }).eq("id", id);
+
+  if (error) {
+    message("Modification impossible : " + error.message, "error");
+    return;
+  }
+
+  message("Statut de la formation modifié.", "success");
+  await refresh();
+};
+
+window.deleteCourse = async id => {
+  if (!confirm("Supprimer cette formation ?")) return;
+
+  const { error } = await db.from("courses").delete().eq("id", id);
+
+  if (error) {
+    message("Suppression impossible : " + error.message, "error");
+    return;
+  }
+
+  message("Formation supprimée.", "success");
+  await refresh();
+};
+
+$("courseForm").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const id = $("courseId").value;
+
+  const record = {
+    title: $("courseTitle").value.trim(),
+    category: $("courseCategory").value.trim(),
+    price: Number($("coursePrice").value),
+    duration_hours: $("courseDuration").value
+      ? Number($("courseDuration").value) : null,
+    level: $("courseLevel").value.trim(),
+    status: $("courseStatus").value,
+    description: $("courseDescription").value.trim()
+  };
+
+  const result = id
+    ? await db.from("courses").update(record).eq("id", id)
+    : await db.from("courses").insert(record);
+
+  if (result.error) {
+    message("Enregistrement impossible : " + result.error.message, "error");
+    return;
+  }
+
+  message("Formation enregistrée.", "success");
+  resetCourse();
+  await refresh();
 });
 
-$("logoutBtn").onclick=async()=>{
-await db.auth.signOut();location.replace("auth.html");
+$("cancelCourse").onclick = resetCourse;
+
+async function loadModules(courseId) {
+  setTableMessage("modulesList", 1, "Chargement des modules...");
+
+  const { data: modules, error } = await db
+    .from("course_modules")
+    .select("id,title,description,position")
+    .eq("course_id", courseId)
+    .order("position");
+
+  if (error) {
+    $("modulesList").textContent = "Erreur : " + error.message;
+    message("Erreur modules : " + error.message, "error");
+    return;
+  }
+
+  $("modulesList").innerHTML = "";
+
+  if (!modules || !modules.length) {
+    $("modulesList").innerHTML =
+      '<p class="empty">Aucun module pour cette formation.</p>';
+    return;
+  }
+
+  for (const m of modules) {
+    const { data: lessons, error: lessonError } = await db
+      .from("lessons")
+      .select("id,title,position,is_free")
+      .eq("module_id", m.id)
+      .order("position");
+
+    const box = document.createElement("div");
+    box.className = "panel";
+
+    box.innerHTML = `
+      <h3>${esc(m.title)}</h3>
+      <p>${esc(m.description || "")}</p>
+      <div class="actions">
+        <button class="light" onclick="renameModule('${m.id}')">Renommer</button>
+        <button class="danger" onclick="deleteModule('${m.id}')">Supprimer le module</button>
+      </div>
+      <h4>Leçons</h4>
+      ${lessonError ? `<p>${esc(lessonError.message)}</p>` :
+        (lessons || []).map(l => `
+          <p>
+            ${esc(l.title)} ${l.is_free ? "(Gratuite)" : ""}
+            <button class="light" onclick="renameLesson('${l.id}')">Modifier</button>
+            <button class="danger" onclick="deleteLesson('${l.id}')">Supprimer</button>
+          </p>
+        `).join("")}
+      <form onsubmit="addLesson(event,'${m.id}')">
+        <input name="title" placeholder="Titre de la nouvelle leçon" required>
+        <textarea name="content" placeholder="Contenu de la leçon"></textarea>
+        <input name="video_url" placeholder="Lien vidéo (facultatif)">
+        <input name="document_url" placeholder="Lien du document (facultatif)">
+        <label><input name="is_free" type="checkbox" style="width:auto"> Leçon gratuite</label>
+        <button class="gold">Ajouter une leçon</button>
+      </form>
+    `;
+
+    $("modulesList").appendChild(box);
+  }
+}
+
+$("contentCourse").onchange = () => {
+  const id = $("contentCourse").value;
+  $("moduleArea").classList.toggle("hidden", !id);
+  if (id) loadModules(id);
 };
 
-(async()=>{if(await checkAdmin())await refresh()})();
-</script>
-</body>
-                                                                    </html>
-                                                                    
+$("moduleForm").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const courseId = $("contentCourse").value;
+  if (!courseId) return;
+
+  const title = $("moduleTitle").value.trim();
+  const description = $("moduleDescription").value.trim();
+
+  const { data: existing, error: readError } = await db
+    .from("course_modules")
+    .select("position")
+    .eq("course_id", courseId)
+    .order("position", { ascending: false })
+    .limit(1);
+
+  if (readError) {
+    message("Lecture des modules impossible : " + readError.message, "error");
+    return;
+  }
+
+  const position = (existing?.[0]?.position || 0) + 1;
+
+  const { error } = await db.from("course_modules").insert({
+    course_id: courseId, title, description, position
+  });
+
+  if (error) {
+    message("Ajout du module impossible : " + error.message, "error");
+    return;
+  }
+
+  $("moduleForm").reset();
+  message("Module ajouté.", "success");
+  await loadModules(courseId);
+  await loadStats();
+});
+
+window.addLesson = async (e, moduleId) => {
+  e.preventDefault();
+
+  const f = e.target;
+
+  const { data: existing, error: readError } = await db
+    .from("lessons")
+    .select("position")
+    .eq("module_id", moduleId)
+    .order("position", { ascending: false })
+    .limit(1);
+
+  if (readError) {
+    message("Lecture des leçons impossible : " + readError.message, "error");
+    return;
+  }
+
+  const position = (existing?.[0]?.position || 0) + 1;
+
+  const record = {
+    module_id: moduleId,
+    title: f.elements.title.value.trim(),
+    content: f.elements.content.value,
+    video_url: f.elements.video_url.value || null,
+    document_url: f.elements.document_url.value || null,
+    is_free: f.elements.is_free.checked,
+    position
+  };
+
+  const { error } = await db.from("lessons").insert(record);
+
+  if (error) {
+    message("Ajout de la leçon impossible : " + error.message, "error");
+    return;
+  }
+
+  message("Leçon ajoutée.", "success");
+  await loadModules($("contentCourse").value);
+  await loadStats();
+};
+
+window.renameModule = async id => {
+  const title = prompt("Nouveau titre du module :");
+  if (!title) return;
+
+  const { error } = await db.from("course_modules").update({ title }).eq("id", id);
+
+  if (error) {
+    message(error.message, "error");
+    return;
+  }
+
+  message("Module modifié.", "success");
+  await loadModules($("contentCourse").value);
+};
+
+window.deleteModule = async id => {
+  if (!confirm("Supprimer ce module et ses leçons ?")) return;
+
+  const { error } = await db.from("course_modules").delete().eq("id", id);
+
+  if (error) {
+    message("Suppression impossible : " + error.message, "error");
+    return;
+  }
+
+  message("Module supprimé.", "success");
+  await loadModules($("contentCourse").value);
+  await loadStats();
+};
+
+window.renameLesson = async id => {
+  const title = prompt("Nouveau titre de la leçon :");
+  if (!title) return;
+
+  const { error } = await db.from("lessons").update({ title }).eq("id", id);
+
+  if (error) {
+    message(error.message, "error");
+    return;
+  }
+
+  message("Leçon modifiée.", "success");
+  await loadModules($("contentCourse").value);
+};
+
+window.deleteLesson = async id => {
+  if (!confirm("Supprimer cette leçon ?")) return;
+
+  const { error } = await db.from("lessons").delete().eq("id", id);
+
+  if (error) {
+    message("Suppression impossible : " + error.message, "error");
+    return;
+  }
+
+  message("Leçon supprimée.", "success");
+  await loadModules($("contentCourse").value);
+  await loadStats();
+};
+
+async function loadProfiles() {
+  const { data, error } = await db
+    .from("profiles")
+    .select("id,full_name,phone,role,created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    setTableMessage("profilesTable", 4, error.message);
+    return;
+  }
+
+  const rows = data || [];
+
+  $("profilesTable").innerHTML = rows.length ? rows.map(p => `
+    <tr>
+      <td>${esc(p.full_name)}</td>
+      <td>${esc(p.phone || "—")}</td>
+      <td>${esc(p.role)}</td>
+      <td>${p.created_at ? new Date(p.created_at).toLocaleDateString("fr-FR") : "—"}</td>
+    </tr>
+  `).join("") : '<tr><td colspan="4" class="empty">Aucun utilisateur.</td></tr>';
+}
+
+async function loadEnrollments() {
+  const { data, error } = await db
+    .from("enrollments")
+    .select("id,user_id,course_id,status,enrolled_at")
+    .order("enrolled_at", { ascending: false });
+
+  if (error) {
+    setTableMessage("enrollmentsTable", 5, error.message);
+    return;
+  }
+
+  const rows = dat
