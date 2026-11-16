@@ -3,20 +3,19 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mon espace apprenant | API-GKIMMO</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Espace apprenant | API-GKIMMO</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:#faf8f2;color:#29251f;line-height:1.55}
 header{background:#38231f;color:white;padding:16px 6%;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.logo{font-weight:bold;color:#e8c77c}.logo small{display:block;color:white;font-size:10px;letter-spacing:1.3px}
+.logo{font-weight:bold;color:#e8c77c}.logo small{display:block;color:white;font-size:10px}
 .actions{display:flex;gap:10px}
 .actions a,.actions button{color:white;background:transparent;border:1px solid #bda17d;border-radius:5px;padding:9px 12px;text-decoration:none;font-size:13px;cursor:pointer}
 main{max-width:1100px;margin:32px auto;padding:0 18px}
 .welcome{background:linear-gradient(120deg,#38231f,#684632);color:white;padding:28px;border-radius:12px;margin-bottom:22px}
 .eyebrow{color:#e8c77c;font-size:12px;font-weight:bold;letter-spacing:1.5px}
 .welcome h1{margin:8px 0;font-size:clamp(25px,4vw,36px)}
-.welcome p{margin:0;color:#f0e8df}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:20px 0}
 .card,.course{background:white;border:1px solid #eee5d9;border-radius:10px;padding:20px}
 .card h2,.course h3{color:#513529;margin:0 0 9px}
@@ -27,8 +26,9 @@ main{max-width:1100px;margin:32px auto;padding:0 18px}
 .pill{display:inline-block;background:#f3ead8;color:#72512c;padding:4px 9px;border-radius:20px;font-size:11px;margin-bottom:9px}
 .notice{padding:13px 15px;border-radius:7px;background:#f3ead8;color:#513529;font-size:14px;margin:14px 0}
 .error{background:#fce8e6;color:#8b2118}
+.success{background:#e5f5e9;color:#17613a}
 .course button,.back-button{background:#684632;color:white;border:0;border-radius:6px;padding:10px 14px;cursor:pointer;margin-top:10px}
-.course button:hover,.back-button:hover{background:#38231f}
+.course button:disabled{opacity:.6;cursor:wait}
 .lesson-list{list-style:none;padding:0}
 .lesson-list li{margin:12px 0;padding:12px;background:#faf8f2;border-radius:7px}
 .lesson-check{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
@@ -42,61 +42,62 @@ main{max-width:1100px;margin:32px auto;padding:0 18px}
 </head>
 <body>
 <header>
-  <div class="logo">API-GKIMMO<small>ESPACE APPRENANT</small></div>
-  <div class="actions">
-    <a href="index.html">Accueil</a>
-    <button id="logoutBtn" type="button">Déconnexion</button>
-  </div>
+<div class="logo">API-GKIMMO<small>ESPACE APPRENANT</small></div>
+<div class="actions">
+<a href="index.html">Accueil</a>
+<button id="logoutBtn" type="button">Déconnexion</button>
+</div>
 </header>
 
 <main>
 <section class="welcome">
-  <div class="eyebrow">VOTRE PARCOURS DE FORMATION</div>
-  <h1>Bienvenue, <span id="learnerName">apprenant</span> !</h1>
-  <p>Retrouvez vos formations et suivez votre parcours pédagogique.</p>
+<div class="eyebrow">VOTRE PARCOURS DE FORMATION</div>
+<h1>Bienvenue, <span id="learnerName">apprenant</span> !</h1>
+<p>Retrouvez vos formations et suivez votre parcours pédagogique.</p>
 </section>
 
 <div class="grid">
-  <section class="card">
-    <div class="kicker">Mon profil</div>
-    <h2 id="profileName">Chargement...</h2>
-    <p id="profileEmail"></p>
-  </section>
-  <section class="card">
-    <div class="kicker">Mes formations</div>
-    <h2 id="enrollmentCount">Chargement...</h2>
-    <p>Formations auxquelles vous êtes inscrit.</p>
-  </section>
-  <section class="card">
-    <div class="kicker">Mes certificats</div>
-    <h2>À venir</h2>
-    <p>Vos certificats seront disponibles après validation des évaluations.</p>
-  </section>
+<section class="card">
+<div class="kicker">Mon profil</div>
+<h2 id="profileName">Chargement...</h2>
+<p id="profileEmail"></p>
+</section>
+<section class="card">
+<div class="kicker">Mes formations</div>
+<h2 id="enrollmentCount">0</h2>
+<p>Formations validées.</p>
+</section>
+<section class="card">
+<div class="kicker">Mes certificats</div>
+<h2>À venir</h2>
+<p>Disponibles après validation des évaluations.</p>
+</section>
 </div>
 
 <section id="myCoursesSection">
-  <h2 class="section-title">Mes formations</h2>
-  <div id="myCoursesMessage" class="notice">Chargement de vos formations...</div>
-  <div id="myCoursesList" class="course-list"></div>
+<h2 class="section-title">Mes formations</h2>
+<div id="myCoursesMessage" class="notice">Chargement...</div>
+<div id="myCoursesList" class="course-list"></div>
 </section>
 
 <section id="courseDetail" hidden>
-  <button class="back-button" id="backButton" type="button">← Retour à mes formations</button>
-  <h2 class="section-title" id="detailTitle"></h2>
-  <p id="detailDescription"></p>
-  <div class="card">
-    <div class="progress-label" id="progressLabel">Progression : 0%</div>
-    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-    <p id="progressCount">0 leçon terminée</p>
-  </div>
-  <div id="modulesMessage" class="notice">Chargement des modules...</div>
-  <div id="modulesList"></div>
+<button class="back-button" id="backButton" type="button">← Retour à mes formations</button>
+<h2 class="section-title" id="detailTitle"></h2>
+<p id="detailDescription"></p>
+<div class="card">
+<div class="progress-label" id="progressLabel">Progression : 0%</div>
+<div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+<p id="progressCount">0 leçon terminée</p>
+</div>
+<div id="modulesMessage" class="notice">Chargement...</div>
+<div id="modulesList"></div>
 </section>
 
 <section>
-  <h2 class="section-title">Catalogue des formations</h2>
-  <div id="catalogMessage" class="notice">Chargement du catalogue...</div>
-  <div id="catalogList" class="course-list"></div>
+<h2 class="section-title">Catalogue des formations</h2>
+<p>Choisissez une formation et envoyez votre demande d'inscription à GKIMMO.</p>
+<div id="catalogMessage" class="notice">Chargement du catalogue...</div>
+<div id="catalogList" class="course-list"></div>
 </section>
 
 <p class="muted">Académie Professionnelle de l'Immobilier GKIMMO</p>
@@ -110,263 +111,334 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
 const validStatuses=["active","approved","paid","enrolled"];
 let currentUser=null;
+let enrollments=[];
 
-function showMessage(id,message,isError=false){
-  const el=document.getElementById(id);
-  el.textContent=message;
-  el.className=isError?"notice error":"notice";
-  el.hidden=false;
+function showMessage(id,message,type="normal"){
+const el=document.getElementById(id);
+el.textContent=message;
+el.className="notice "+(type==="error"?"error":type==="success"?"success":"");
+el.hidden=false;
 }
 
-function makeCourseCard(course,buttonText,callback){
-  const article=document.createElement("article");
-  article.className="course";
-  const category=document.createElement("span");
-  category.className="pill";
-  category.textContent=course.category||"Formation";
-  const title=document.createElement("h3");
-  title.textContent=course.title||"Formation";
-  const description=document.createElement("p");
-  description.textContent=course.description||"Description à venir.";
-  const price=document.createElement("p");
-  price.textContent=course.price!=null?"Tarif : "+course.price+" FCFA":"Tarif à préciser";
-  const button=document.createElement("button");
-  button.type="button";
-  button.textContent=buttonText;
-  button.addEventListener("click",callback);
-  article.append(category,title,description,price,button);
-  return article;
+function makeCourseCard(course,buttonText,callback,disabled=false){
+const article=document.createElement("article");
+article.className="course";
+
+const category=document.createElement("span");
+category.className="pill";
+category.textContent=course.category||"Formation";
+
+const title=document.createElement("h3");
+title.textContent=course.title||"Formation";
+
+const description=document.createElement("p");
+description.textContent=course.description||"Description à venir.";
+
+const price=document.createElement("p");
+price.textContent=course.price!=null?"Tarif : "+course.price+" FCFA":"Tarif à préciser";
+
+const button=document.createElement("button");
+button.type="button";
+button.textContent=buttonText;
+button.disabled=disabled;
+button.addEventListener("click",callback);
+
+article.append(category,title,description,price,button);
+return article;
 }
 
 async function loadMyCourses(){
-  const list=document.getElementById("myCoursesList");
-  list.replaceChildren();
-  showMessage("myCoursesMessage","Recherche de vos inscriptions...");
+const list=document.getElementById("myCoursesList");
+list.replaceChildren();
 
-  const {data:enrollments,error}=await sb.from("enrollments")
-    .select("course_id,status").eq("user_id",currentUser.id);
+const {data,error}=await sb.from("enrollments")
+.select("course_id,status")
+.eq("user_id",currentUser.id);
 
-  if(error){
-    showMessage("myCoursesMessage","Impossible de récupérer vos inscriptions.",true);
-    console.error(error);
-    return;
-  }
-
-  const approved=(enrollments||[]).filter(e=>
-    validStatuses.includes(String(e.status||"").toLowerCase())
-  );
-  const courseIds=[...new Set(approved.map(e=>e.course_id).filter(Boolean))];
-  document.getElementById("enrollmentCount").textContent=courseIds.length;
-
-  if(courseIds.length===0){
-    showMessage("myCoursesMessage","Vous n'avez pas encore de formation validée. Consultez le catalogue ci-dessous.");
-    return;
-  }
-
-  const {data:courses,error:courseError}=await sb.from("courses")
-    .select("id,title,description,category,price").in("id",courseIds);
-
-  if(courseError){
-    showMessage("myCoursesMessage","Impossible de charger vos formations.",true);
-    console.error(courseError);
-    return;
-  }
-
-  document.getElementById("myCoursesMessage").hidden=true;
-  (courses||[]).forEach(course=>{
-    list.appendChild(makeCourseCard(course,"Accéder à la formation",()=>openCourse(course)));
-  });
+if(error){
+showMessage("myCoursesMessage","Erreur de chargement des inscriptions : "+error.message,"error");
+return;
 }
 
-async function updateProgress(total,completed){
-  const percent=total?Math.round(completed/total*100):0;
-  document.getElementById("progressLabel").textContent="Progression : "+percent+"%";
-  document.getElementById("progressFill").style.width=percent+"%";
-  document.getElementById("progressCount").textContent=completed+" leçon(s) terminée(s) sur "+total;
+enrollments=data||[];
+const approved=enrollments.filter(e=>
+validStatuses.includes(String(e.status||"").toLowerCase())
+);
+const ids=[...new Set(approved.map(e=>e.course_id).filter(Boolean))];
+
+document.getElementById("enrollmentCount").textContent=ids.length;
+
+if(!ids.length){
+showMessage("myCoursesMessage","Vous n'avez pas encore de formation validée. Consultez le catalogue ci-dessous.");
+return;
 }
 
-async function openCourse(course){
-  document.getElementById("myCoursesSection").hidden=true;
-  document.getElementById("courseDetail").hidden=false;
-  document.getElementById("detailTitle").textContent=course.title;
-  document.getElementById("detailDescription").textContent=course.description||"";
-  document.getElementById("modulesList").replaceChildren();
-  showMessage("modulesMessage","Chargement des modules...");
+const {data:courses,error:courseError}=await sb.from("courses")
+.select("id,title,description,category,price")
+.in("id",ids);
 
-  const {data:modules,error}=await sb.from("course_modules")
-    .select("id,title,description").eq("course_id",course.id).order("id");
+if(courseError){
+showMessage("myCoursesMessage","Impossible de charger vos formations.","error");
+return;
+}
 
-  if(error){
-    showMessage("modulesMessage","Impossible de charger les modules.",true);
-    console.error(error);
-    return;
-  }
+document.getElementById("myCoursesMessage").hidden=true;
+(courses||[]).forEach(course=>{
+list.appendChild(makeCourseCard(course,"Accéder à la formation",()=>openCourse(course)));
+});
+}
 
-  const container=document.getElementById("modulesList");
-  container.replaceChildren();
+async function requestEnrollment(course,button){
+const existing=enrollments.find(e=>e.course_id===course.id);
 
-  if(!modules||modules.length===0){
-    showMessage("modulesMessage","Aucun module n'est encore disponible.");
-    await updateProgress(0,0);
-    return;
-  }
+if(existing){
+const status=String(existing.status||"").toLowerCase();
+if(validStatuses.includes(status)){
+alert("Vous êtes déjà inscrit à cette formation.");
+return;
+}
+if(status==="pending"){
+alert("Votre demande d'inscription est déjà en attente de validation.");
+return;
+}
+}
 
-  document.getElementById("modulesMessage").hidden=true;
-  let totalLessons=0;
-  let completedLessons=0;
+button.disabled=true;
+button.textContent="Envoi en cours...";
 
-  for(const module of modules){
-    const article=document.createElement("article");
-    article.className="course";
+const {error}=await sb.from("enrollments").insert({
+user_id:currentUser.id,
+course_id:course.id,
+status:"pending"
+});
 
-    const title=document.createElement("h3");
-    title.textContent=module.title||"Module";
-    const description=document.createElement("p");
-    description.textContent=module.description||"";
-    article.append(title,description);
+if(error){
+console.error(error);
+alert("La demande n'a pas pu être envoyée : "+error.message);
+button.disabled=false;
+button.textContent="Demander mon inscription";
+return;
+}
 
-    const {data:lessons,error:lessonError}=await sb.from("lessons")
-      .select("id,title,content").eq("module_id",module.id).order("id");
-
-    if(lessonError){
-      const warning=document.createElement("p");
-      warning.textContent="Les leçons ne sont pas disponibles pour le moment.";
-      article.append(warning);
-      console.error(lessonError);
-      container.appendChild(article);
-      continue;
-    }
-
-    if(!lessons||lessons.length===0){
-      const empty=document.createElement("p");
-      empty.textContent="Les leçons seront bientôt disponibles.";
-      article.append(empty);
-      container.appendChild(article);
-      continue;
-    }
-
-    const ul=document.createElement("ul");
-    ul.className="lesson-list";
-
-    const {data:progress,error:progressError}=await sb.from("lesson_progress")
-      .select("lesson_id,completed").eq("user_id",currentUser.id);
-
-    if(progressError){
-      showMessage("modulesMessage","Impossible de lire votre progression. Vérifiez la table lesson_progress.",true);
-      console.error(progressError);
-      return;
-    }
-
-    const progressMap=new Map((progress||[]).map(p=>[p.lesson_id,p.completed]));
-
-    lessons.forEach(lesson=>{
-      totalLessons++;
-      const isCompleted=progressMap.get(lesson.id)===true;
-      if(isCompleted)completedLessons++;
-
-      const li=document.createElement("li");
-      const label=document.createElement("label");
-      label.className="lesson-check";
-
-      const checkbox=document.createElement("input");
-      checkbox.type="checkbox";
-      checkbox.checked=isCompleted;
-
-      const text=document.createElement("span");
-      text.textContent=lesson.title||"Leçon";
-
-      checkbox.addEventListener("change",async()=>{
-        checkbox.disabled=true;
-        const completed=checkbox.checked;
-
-        const {error}=await sb.from("lesson_progress").upsert({
-          user_id:currentUser.id,
-          lesson_id:lesson.id,
-          completed:completed,
-          completed_at:completed?new Date().toISOString():null
-        },{onConflict:"user_id,lesson_id"});
-
-        checkbox.disabled=false;
-
-        if(error){
-          checkbox.checked=!completed;
-          alert("Impossible d'enregistrer votre progression. Réessayez.");
-          console.error(error);
-          return;
-        }
-
-        if(completed)completedLessons++;
-        else completedLessons--;
-        await updateProgress(totalLessons,completedLessons);
-      });
-
-      label.append(checkbox,text);
-      li.appendChild(label);
-      ul.appendChild(li);
-    });
-
-    article.appendChild(ul);
-    container.appendChild(article);
-  }
-
-  await updateProgress(totalLessons,completedLessons);
+alert("Votre demande d'inscription a été envoyée à GKIMMO. Elle est en attente de validation.");
+await loadMyCourses();
+await loadCatalog();
 }
 
 async function loadCatalog(){
-  const list=document.getElementById("catalogList");
-  const {data:courses,error}=await sb.from("courses")
-    .select("id,title,description,category,price")
-    .eq("status","published").order("title");
+const list=document.getElementById("catalogList");
+list.replaceChildren();
 
-  if(error){
-    showMessage("catalogMessage","Impossible de charger le catalogue.",true);
-    console.error(error);
-    return;
-  }
+const {data:courses,error}=await sb.from("courses")
+.select("id,title,description,category,price")
+.eq("status","published")
+.order("title");
 
-  if(!courses||courses.length===0){
-    showMessage("catalogMessage","Aucune formation publiée pour le moment.");
-    return;
-  }
+if(error){
+showMessage("catalogMessage","Impossible de charger le catalogue : "+error.message,"error");
+return;
+}
 
-  document.getElementById("catalogMessage").hidden=true;
-  courses.forEach(course=>{
-    list.appendChild(makeCourseCard(course,"Voir dans mes formations",()=>{
-      alert("Pour accéder à cette formation, votre inscription doit d'abord être validée.");
-    }));
-  });
+if(!courses||!courses.length){
+showMessage("catalogMessage","Aucune formation publiée.");
+return;
+}
+
+document.getElementById("catalogMessage").hidden=true;
+
+courses.forEach(course=>{
+const existing=enrollments.find(e=>e.course_id===course.id);
+let label="Demander mon inscription";
+let disabled=false;
+
+if(existing){
+const status=String(existing.status||"").toLowerCase();
+if(validStatuses.includes(status)){
+label="Déjà inscrit";
+disabled=true;
+}else if(status==="pending"){
+label="Demande en attente";
+disabled=true;
+}
+}
+
+const card=makeCourseCard(course,label,async()=>{
+const button=card.querySelector("button");
+await requestEnrollment(course,button);
+},disabled);
+
+list.appendChild(card);
+});
+}
+
+async function updateProgress(total,completed){
+const percent=total?Math.round(completed/total*100):0;
+document.getElementById("progressLabel").textContent="Progression : "+percent+"%";
+document.getElementById("progressFill").style.width=percent+"%";
+document.getElementById("progressCount").textContent=completed+" leçon(s) terminée(s) sur "+total;
+}
+
+async function openCourse(course){
+document.getElementById("myCoursesSection").hidden=true;
+document.getElementById("courseDetail").hidden=false;
+document.getElementById("detailTitle").textContent=course.title;
+document.getElementById("detailDescription").textContent=course.description||"";
+document.getElementById("modulesList").replaceChildren();
+showMessage("modulesMessage","Chargement des modules...");
+
+const {data:modules,error}=await sb.from("course_modules")
+.select("id,title,description")
+.eq("course_id",course.id)
+.order("id");
+
+if(error){
+showMessage("modulesMessage","Impossible de charger les modules.","error");
+return;
+}
+
+const container=document.getElementById("modulesList");
+container.replaceChildren();
+
+if(!modules||!modules.length){
+showMessage("modulesMessage","Aucun module disponible.");
+await updateProgress(0,0);
+return;
+}
+
+document.getElementById("modulesMessage").hidden=true;
+
+const {data:progress,error:progressError}=await sb.from("lesson_progress")
+.select("lesson_id,completed")
+.eq("user_id",currentUser.id);
+
+if(progressError){
+showMessage("modulesMessage","Erreur de lecture de la progression : "+progressError.message,"error");
+return;
+}
+
+const progressMap=new Map((progress||[]).map(p=>[p.lesson_id,p.completed]));
+let totalLessons=0;
+let completedLessons=0;
+
+for(const module of modules){
+const article=document.createElement("article");
+article.className="course";
+
+const title=document.createElement("h3");
+title.textContent=module.title||"Module";
+const description=document.createElement("p");
+description.textContent=module.description||"";
+article.append(title,description);
+
+const {data:lessons,error:lessonError}=await sb.from("lessons")
+.select("id,title")
+.eq("module_id",module.id)
+.order("id");
+
+if(lessonError){
+const warning=document.createElement("p");
+warning.textContent="Erreur de chargement des leçons.";
+article.append(warning);
+container.appendChild(article);
+continue;
+}
+
+if(!lessons||!lessons.length){
+const empty=document.createElement("p");
+empty.textContent="Les leçons seront bientôt disponibles.";
+article.append(empty);
+container.appendChild(article);
+continue;
+}
+
+const ul=document.createElement("ul");
+ul.className="lesson-list";
+
+lessons.forEach(lesson=>{
+totalLessons++;
+const isCompleted=progressMap.get(lesson.id)===true;
+if(isCompleted)completedLessons++;
+
+const li=document.createElement("li");
+const label=document.createElement("label");
+label.className="lesson-check";
+
+const checkbox=document.createElement("input");
+checkbox.type="checkbox";
+checkbox.checked=isCompleted;
+
+const text=document.createElement("span");
+text.textContent=lesson.title||"Leçon";
+
+checkbox.addEventListener("change",async()=>{
+checkbox.disabled=true;
+const completed=checkbox.checked;
+
+const {error}=await sb.from("lesson_progress").upsert({
+user_id:currentUser.id,
+lesson_id:lesson.id,
+completed:completed,
+completed_at:completed?new Date().toISOString():null
+},{onConflict:"user_id,lesson_id"});
+
+checkbox.disabled=false;
+
+if(error){
+checkbox.checked=!completed;
+alert("Erreur d'enregistrement de la progression : "+error.message);
+return;
+}
+
+if(completed)completedLessons++;
+else completedLessons--;
+
+await updateProgress(totalLessons,completedLessons);
+});
+
+label.append(checkbox,text);
+li.appendChild(label);
+ul.appendChild(li);
+});
+
+article.appendChild(ul);
+container.appendChild(article);
+}
+
+await updateProgress(totalLessons,completedLessons);
 }
 
 async function startDashboard(){
-  const {data:{session},error}=await sb.auth.getSession();
-  if(error||!session){
-    window.location.replace("auth.html");
-    return;
-  }
+const {data:{session},error}=await sb.auth.getSession();
 
-  currentUser=session.user;
-  const name=currentUser.user_metadata?.full_name||
-    currentUser.email?.split("@")[0]||"apprenant";
+if(error||!session){
+window.location.replace("auth.html");
+return;
+}
 
-  document.getElementById("learnerName").textContent=name;
-  document.getElementById("profileName").textContent=name;
-  document.getElementById("profileEmail").textContent=currentUser.email||"";
+currentUser=session.user;
+const name=currentUser.user_metadata?.full_name||
+currentUser.email?.split("@")[0]||"apprenant";
 
-  await Promise.all([loadMyCourses(),loadCatalog()]);
+document.getElementById("learnerName").textContent=name;
+document.getElementById("profileName").textContent=name;
+document.getElementById("profileEmail").textContent=currentUser.email||"";
+
+await loadMyCourses();
+await loadCatalog();
 }
 
 document.getElementById("backButton").addEventListener("click",()=>{
-  document.getElementById("courseDetail").hidden=true;
-  document.getElementById("myCoursesSection").hidden=false;
+document.getElementById("courseDetail").hidden=true;
+document.getElementById("myCoursesSection").hidden=false;
 });
 
 document.getElementById("logoutBtn").addEventListener("click",async()=>{
-  const {error}=await sb.auth.signOut();
-  if(error){
-    alert("La déconnexion n'a pas abouti. Veuillez réessayer.");
-    return;
-  }
-  window.location.replace("auth.html");
+const {error}=await sb.auth.signOut();
+if(error){
+alert("Déconnexion impossible. Réessayez.");
+return;
+}
+window.location.replace("auth.html");
 });
 
 startDashboard();
