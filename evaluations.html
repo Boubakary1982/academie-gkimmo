@@ -324,13 +324,27 @@ $("questionNotice").textContent=
 return;
 }
 
+// Calcul d'une position entière simple : 1, 2, 3...
+// Ne plus utiliser Date.now() dans ce champ integer.
+const {count,error:countError}=await db.from("evaluation_questions")
+.select("id",{count:"exact",head:true})
+.eq("evaluation_id",activeEvaluation);
+
+if(countError){
+$("questionNotice").textContent=
+"Impossible de déterminer la position : "+countError.message;
+return;
+}
+
+const nextPosition=(count||0)+1;
+
 const {data:q,error:qe}=await db.from("evaluation_questions")
 .insert({
 evaluation_id:activeEvaluation,
 question_text,
 question_type:"multiple_choice",
 points,
-position:Date.now()
+position:nextPosition
 })
 .select("id")
 .single();
