@@ -15,12 +15,16 @@ h1,h2,h3{color:#432c23}
 label{display:block;font-weight:bold;font-size:14px;margin-top:10px}
 input,select,textarea{width:100%;padding:11px;border:1px solid #d9d0c4;border-radius:6px;font:inherit;margin:6px 0 10px}
 button{border:0;border-radius:6px;padding:11px 14px;background:#38231f;color:white;font-weight:bold;cursor:pointer;margin:5px 4px 5px 0}
+button:disabled{opacity:.5;cursor:not-allowed}
 .gold{background:#d6ad60;color:#302820}
 .light{background:#eee7dc;color:#38231f}
+.danger{background:#6b2923;color:white}
 .status{padding:12px;background:#f3ead8;border-radius:7px;margin:12px 0}
 .error{background:#fce8e6;color:#8b2118}
 .success{background:#e5f5e9;color:#17613a}
 .question{border:1px solid #e9e2d8;border-radius:8px;padding:14px;margin:12px 0}
+.question-detail{background:#faf8f4;border:1px solid #e9e2d8;border-radius:8px;padding:14px;margin:12px 0}
+.correct-answer{color:#17613a;font-weight:bold}
 .option{display:flex;align-items:center;gap:8px}
 .option input[type=radio]{width:auto;margin:0}
 small{color:#766d65}
@@ -104,6 +108,10 @@ small{color:#766d65}
 <div id="questionNotice" class="status">
 Aucune question ajoutée.
 </div>
+
+<div id="questionPreview" class="question">
+Sélectionnez une évaluation pour voir ses questions.
+</div>
 </section>
 
 <section class="panel">
@@ -186,93 +194,194 @@ $("course").innerHTML=
 ).join("");
 }
 
-
 async function loadEvaluations(){
 
-  const {data,error}=await db.from("evaluations")
-    .select("id,title,status,course_id,created_at")
-    .order("created_at",{ascending:false});
+const {data,error}=await db.from("evaluations")
+.select("id,title,status,course_id,created_at")
+.order("created_at",{ascending:false});
 
-  if(error){
-    $("evalList").textContent="Erreur : "+error.message;
-    return;
-  }
-
-  const list=$("evalList");
-  list.replaceChildren();
-
-  if(!data?.length){
-    list.textContent="Aucune évaluation créée pour le moment.";
-    return;
-  }
-
-  for(const e of data){
-
-    const box=document.createElement("div");
-    box.className="question";
-
-    const title=document.createElement("strong");
-    title.textContent=e.title;
-
-    const status=document.createElement("p");
-    status.textContent="Statut : "+e.status;
-
-    const {count,error:countError}=await db.from("evaluation_questions")
-      .select("id",{count:"exact",head:true})
-      .eq("evaluation_id",e.id);
-
-    const countLine=document.createElement("p");
-    countLine.textContent=countError
-      ?"Nombre de questions : vérification impossible"
-      :"Questions enregistrées : "+(count||0);
-
-    const btn=document.createElement("button");
-    btn.className="light";
-    btn.textContent="Ajouter des questions";
-    btn.addEventListener("click",()=>{
-      chooseEval(e.id,e.title);
-    });
-
-    box.append(title,status,countLine,btn);
-
-    if(!countError && (count||0)===0 && e.status==="draft"){
-
-      const deleteBtn=document.createElement("button");
-      deleteBtn.className="danger";
-      deleteBtn.textContent="Supprimer le brouillon vide";
-
-      deleteBtn.addEventListener("click",async()=>{
-
-        if(!confirm("Supprimer définitivement ce brouillon vide ?"))return;
-
-        deleteBtn.disabled=true;
-
-        const {error:deleteError}=await db.from("evaluations")
-          .delete()
-          .eq("id",e.id);
-
-        if(deleteError){
-          deleteBtn.disabled=false;
-          note("Suppression impossible : "+deleteError.message,"error");
-          return;
-        }
-
-        if(activeEvaluation===e.id){
-          activeEvaluation=null;
-          $("questionPanel").classList.add("hidden");
-        }
-
-        note("Brouillon vide supprimé.","success");
-        await loadEvaluations();
-      });
-
-      box.appendChild(deleteBtn);
-    }
-
-    list.appendChild(box);
-  }
+if(error){
+$("evalList").textContent="Erreur : "+error.message;
+return;
 }
 
+const list=$("evalList");
+list.replaceChildren();
+
+if(!data?.length){
+list.textContent="Aucune évaluation créée pour le moment.";
+return;
+}
+
+for(const e of data){
+
+const box=document.createElement("div");
+box.className="question";
+
+const title=document.createElement("strong");
+title.textContent=e.title;
+
+const status=document.createElement("p");
+status.textContent="Statut : "+e.status;
+
+const {count,error:countError}=await db.from("evaluation_questions")
+.select("id",{count:"exact",head:true})
+.eq("evaluation_id",e.id);
+
+const countLine=document.createElement("p");
+countLine.textContent=countError
+?"Nombre de questions : vérification impossible"
+:"Questions enregistrées : "+(count||0);
+
+const btn=document.createElement("button");
+btn.className="light";
+btn.textContent="Voir les questions / Ajouter";
+btn.addEventListener("click",()=>{
+chooseEval(e.id,e.title);
+});
+
+box.append(title,status,countLine,btn);
+
+if(!countError&&(count||0)===0&&e.status==="draft"){
+
+const deleteBtn=document.createElement("button");
+deleteBtn.className="danger";
+deleteBtn.textContent="Supprimer le brouillon vide";
+
+deleteBtn.addEventListener("click",async()=>{
+
+if(!confirm("Supprimer définitivement ce brouillon vide ?"))return;
+
+deleteBtn.disabled=true;
+
+const {error:deleteError}=await db.from("evaluations")
+.delete()
+.eq("id",e.id);
+
+if(deleteError){
+deleteBtn.disabled=false;
+note("Suppression impossible : "+deleteError.message,"error");
+return;
+}
+
+if(activeEvaluation===e.id){
+activeEvaluation=null;
+$("questionPanel").classList.add("hidden");
+}
+
+note("Brouillon vide supprimé.","success");
+await loadEvaluations();
+});
+
+box.appendChild(deleteBtn);
+}
+
+list.appendChild(box);
+}
+}
+
+/* AFFICHAGE DES QUESTIONS ET DES REPONSES */
+
+async function loadQuestionPreview(){
+
+const preview=$("questionPreview");
+
+if(!activeEvaluation){
+preview.textContent="Sélectionnez une évaluation pour voir ses questions.";
+return;
+}
+
+preview.textContent="Chargement des questions...";
+
+const {data:questions,error}=await db.from("evaluation_questions")
+.select("id,question_text,points,position")
+.eq("evaluation_id",activeEvaluation)
+.order("position",{ascending:true});
+
+if(error){
+preview.textContent="Impossible de charger les questions : "+error.message;
+return;
+}
+
+preview.replaceChildren();
+
+const heading=document.createElement("h3");
+heading.textContent="Questions enregistrées ("+(questions||[]).length+")";
+preview.appendChild(heading);
+
+if(!questions?.length){
+const empty=document.createElement("p");
+empty.textContent="Aucune question enregistrée pour cette évaluation.";
+preview.appendChild(empty);
+return;
+}
+
+for(let i=0;i<questions.length;i++){
+
+const q=questions[i];
+
+const card=document.createElement("div");
+card.className="question-detail";
+
+const title=document.createElement("strong");
+title.textContent="Question "+(i+1)+" : "+q.question_text;
+card.appendChild(title);
+
+const pts=document.createElement("p");
+pts.textContent="Points attribués : "+q.points;
+card.appendChild(pts);
+
+const {data:answers,error:answerError}=await db.from("evaluation_answers")
+.select("answer_text,is_correct,position")
+.eq("question_id",q.id)
+.order("position",{ascending:true});
+
+if(answerError){
+
+const err=document.createElement("p");
+err.textContent="Erreur de chargement des réponses : "+answerError.message;
+err.className="error";
+card.appendChild(err);
+
+}else{
+
+const subtitle=document.createElement("p");
+subtitle.textContent="Propositions de réponses :";
+card.appendChild(subtitle);
+
+const ul=document.createElement("ul");
+
+for(let j=0;j<(answers||[]).length;j++){
+
+const answer=answers[j];
+const li=document.createElement("li");
+
+const letter=["A","B","C","D"][j]||String(j+1);
+
+li.textContent="Proposition "+letter+" : "+answer.answer_text;
+
+if(answer.is_correct){
+li.textContent+=" — BONNE RÉPONSE";
+li.className="correct-answer";
+}
+
+ul.appendChild(li);
+}
+
+card.appendChild(ul);
+
+if(!answers||answers.length===0){
+const empty=document.createElement("p");
+empty.textContent="Aucune proposition enregistrée.";
+card.appendChild(empty);
+}
+}
+
+preview.appendChild(card);
+}
+}
+
+/* SELECTION D'UNE EVALUATION */
 
 async function chooseEval(id,title){
 
@@ -284,11 +393,15 @@ $("questionPanel").classList.remove("hidden");
 
 $("questionNotice").textContent="Vous pouvez ajouter les questions.";
 
+await loadQuestionPreview();
+
 window.scrollTo({
 top:$("questionPanel").offsetTop,
 behavior:"smooth"
 });
 }
+
+/* CREATION D'UNE EVALUATION */
 
 $("createEval").addEventListener("click",async()=>{
 
@@ -337,8 +450,11 @@ $("questionNotice").textContent=
 note("Évaluation créée en brouillon.","success");
 
 await loadEvaluations();
+await loadQuestionPreview();
 
 });
+
+/* ENREGISTREMENT D'UNE QUESTION */
 
 $("addQuestion").addEventListener("click",async()=>{
 
@@ -369,7 +485,6 @@ return;
 }
 
 // Calcul d'une position entière simple : 1, 2, 3...
-// Ne plus utiliser Date.now() dans ce champ integer.
 const {count,error:countError}=await db.from("evaluation_questions")
 .select("id",{count:"exact",head:true})
 .eq("evaluation_id",activeEvaluation);
@@ -424,7 +539,12 @@ $("questionNotice").textContent=
 
 note("Question ajoutée avec succès.","success");
 
+await loadQuestionPreview();
+await loadEvaluations();
+
 });
+
+/* PUBLICATION DE L'EVALUATION */
 
 $("publishEval").addEventListener("click",async()=>{
 
@@ -466,6 +586,8 @@ note("Évaluation publiée avec succès.","success");
 await loadEvaluations();
 
 });
+
+/* DECONNEXION */
 
 $("logout").addEventListener("click",async()=>{
 await db.auth.signOut();
