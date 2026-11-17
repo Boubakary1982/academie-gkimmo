@@ -186,49 +186,93 @@ $("course").innerHTML=
 ).join("");
 }
 
+
 async function loadEvaluations(){
 
-const {data,error}=await db.from("evaluations")
-.select("id,title,status,course_id,created_at")
-.order("created_at",{ascending:false});
+  const {data,error}=await db.from("evaluations")
+    .select("id,title,status,course_id,created_at")
+    .order("created_at",{ascending:false});
 
-if(error){
-$("evalList").textContent="Erreur : "+error.message;
-return;
+  if(error){
+    $("evalList").textContent="Erreur : "+error.message;
+    return;
+  }
+
+  const list=$("evalList");
+  list.replaceChildren();
+
+  if(!data?.length){
+    list.textContent="Aucune évaluation créée pour le moment.";
+    return;
+  }
+
+  for(const e of data){
+
+    const box=document.createElement("div");
+    box.className="question";
+
+    const title=document.createElement("strong");
+    title.textContent=e.title;
+
+    const status=document.createElement("p");
+    status.textContent="Statut : "+e.status;
+
+    const {count,error:countError}=await db.from("evaluation_questions")
+      .select("id",{count:"exact",head:true})
+      .eq("evaluation_id",e.id);
+
+    const countLine=document.createElement("p");
+    countLine.textContent=countError
+      ?"Nombre de questions : vérification impossible"
+      :"Questions enregistrées : "+(count||0);
+
+    const btn=document.createElement("button");
+    btn.className="light";
+    btn.textContent="Ajouter des questions";
+    btn.addEventListener("click",()=>{
+      chooseEval(e.id,e.title);
+    });
+
+    box.append(title,status,countLine,btn);
+
+    if(!countError && (count||0)===0 && e.status==="draft"){
+
+      const deleteBtn=document.createElement("button");
+      deleteBtn.className="danger";
+      deleteBtn.textContent="Supprimer le brouillon vide";
+
+      deleteBtn.addEventListener("click",async()=>{
+
+        if(!confirm("Supprimer définitivement ce brouillon vide ?"))return;
+
+        deleteBtn.disabled=true;
+
+        const {error:deleteError}=await db.from("evaluations")
+          .delete()
+          .eq("id",e.id);
+
+        if(deleteError){
+          deleteBtn.disabled=false;
+          note("Suppression impossible : "+deleteError.message,"error");
+          return;
+        }
+
+        if(activeEvaluation===e.id){
+          activeEvaluation=null;
+          $("questionPanel").classList.add("hidden");
+        }
+
+        note("Brouillon vide supprimé.","success");
+        await loadEvaluations();
+      });
+
+      box.appendChild(deleteBtn);
+    }
+
+    list.appendChild(box);
+  }
 }
 
-const list=$("evalList");
-list.replaceChildren();
-
-if(!data?.length){
-list.textContent="Aucune évaluation créée pour le moment.";
-return;
-}
-
-data.forEach(e=>{
-
-const box=document.createElement("div");
-box.className="question";
-
-const title=document.createElement("strong");
-title.textContent=e.title;
-
-const status=document.createElement("p");
-status.textContent="Statut : "+e.status;
-
-const btn=document.createElement("button");
-btn.className="light";
-btn.textContent="Ajouter des questions";
-
-btn.addEventListener("click",()=>{
-chooseEval(e.id,e.title);
-});
-
-box.append(title,status,btn);
-list.appendChild(box);
-
-});
-}
 
 async function chooseEval(id,title){
 
