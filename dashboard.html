@@ -266,6 +266,7 @@ document.getElementById("progressCount").textContent=completed+" leçon(s) termi
 
 async function openCourse(course){
 currentCourse=course;
+  await loadCourseEvaluations(course);
 document.getElementById("myCoursesSection").hidden=true;
 document.getElementById("lessonReader").hidden=true;
 document.getElementById("courseDetail").hidden=false;
@@ -365,6 +366,233 @@ article.appendChild(row);
 container.appendChild(article);
 }
 updateProgress(currentTotal,currentCompleted);
+}
+
+async function loadCourseEvaluations(course){
+  const list=document.getElementById("evaluationList");
+  const message=document.getElementById("evaluationListMessage");
+  const workspace=document.getElementById("evaluationWorkspace");
+
+  list.replaceChildren();
+  workspace.replaceChildren();
+  workspace.hidden=true;
+  message.textContent="Chargement des évaluations...";
+
+  const {data,error}=await sb.from("evaluations")
+    .select("id,title,description,duration_minutes,passing_score")
+    .eq("course_id",course.id)
+    .eq("status","published")
+    .order("created_at");
+
+  if(error){
+    message.textContent="Erreur de chargement : "+error.message;
+    return;
+  }
+
+  if(!data || data.length===0){
+    message.textContent="Aucune évaluation publiée pour cette formation.";
+    return;
+  }
+
+  message.textContent="Évaluations disponibles :";
+
+  data.forEach(evaluation=>{
+    const card=document.createElement("div");
+    card.className="course";
+
+    const title=document.createElement("h3");
+    title.textContent=evaluation.title;
+
+    const description=document.createElement("p");
+    description.textContent=evaluation.description||"Évaluation de la formation.";
+
+    const details=document.createElement("p");
+    details.textContent="Durée : "+(evaluation.duration_minutes||30)+" minutes · Réussite : "+evaluation.passing_score+"%";
+
+    const button=document.createElement("button");
+    button.className="primary";
+    button.textContent="Commencer l'examen";
+    button.addEventListener("click",()=>startLearnerEvaluation(evaluation,button));
+
+    card.append(title,description,details,button);
+    list.appendChild(card);
+  });
+}
+
+async function startLearnerEvaluation(evaluation,button){
+  button.disabled=true;
+  button.textContent="Démarrage...";
+
+  const workspace=document.getElementById("evaluationWorkspace");
+  workspace.replaceChildren();
+  workspace.hidden=false;
+
+  const {data:startData,error:startError}=await sb.rpc("start_evaluation",{
+    p_evaluation_id:evaluation.id
+  });
+
+  if(startError){
+    workspace.textContent="Impossible de démarrer : "+startError.message;
+    button.disabled=false;
+    button.textContent="Réessayer";
+    return;
+  }
+
+  const attempt=Array.isArray(startData)?startData[0]:startData;
+
+  if(!attempt?.attempt_id){
+    workspace.textContent="Identifiant de tentative introuvable.";
+    button.disabled=false;
+    button.textContent="Réessayer";
+    return;
+  }
+
+  const {data:rows,error:questionError}=await sb.rpc("get_evaluation_questions",{
+    p_attempt_id:attempt.attempt_id
+  });
+
+  if(questionError){
+    workspace.textContent="Erreur de chargement des questions : "+questionError.message;
+    return;
+  }
+
+  const questionMap=new Map();
+
+  (rows||[]).forEach(row=>{
+    if(!questionMap.has(row.question_id)){
+      questionMap.set(row.question_id,{
+        id:row.question_id,
+        text:row.question_text,
+        points:row.points,
+        position:row.question_position,
+        answers:[]
+      });
+    }
+
+    if(row.answer_id){
+      questionMap.get(row.question_id).answers.push({
+        id:row.answer_id,
+        text:row.answer_text,
+        position:row.answer_position
+      });
+    }
+  });
+
+  const questions=[...questionMap.values()]
+    .sort((a,b)=>a.position-b.position);
+
+  if(!questions.length){
+    workspace.textContent="Cette évaluation ne contient aucune question.";
+    return;
+  }
+
+  workspace.replaceChildren();
+
+  const heading=document.createElement("h3");
+  heading.textContent=attempt.evaluation_title||evaluation.title;
+
+  const instruction=document.createElement("p");
+  instruction.textContent="Répondez à toutes les questions puis soumettez votre examen.";
+
+  const form=document.createElement("div");
+
+  questions.forEach((question,index)=>{
+    const box=document.createElement("div");
+    box.className="course";
+
+    const title=document.createElement("h4");
+    title.textContent=(index+1)+". "+question.text;
+
+    const points=document.createElement("p");
+    points.textContent="Points : "+question.points;
+
+    box.append(title,points);
+
+    question.answers
+      .sort((a,b)=>a.position-b.position)
+      .forEach(answer=>{
+        const label=document.createElement("label");
+        label.className="lesson-row";
+
+        const radio=document.createElement("input");
+        radio.type="radio";
+        radio.name="answer_"+question.id;
+        radio.value=answer.id;
+
+        const text=document.createElement("span");
+        text.textContent=answer.text;
+
+        label.append(radio,text);
+        box.appendChild(label);
+      });
+
+    form.appendChild(box);
+  });
+
+  const submit=document.createElement("button");
+  submit.className="primary";
+  submit.textContent="Soumettre mes réponses";
+
+  submit.addEventListener("click",async()=>{
+    if(submit.disabled)return;
+
+    const responses=questions.map(question=>{
+      const selected=form.querySelector(
+        'input[name="answer_'+question.id+'"]:checked'
+      );
+
+      return {
+        question_id:question.id,
+        answer_id:selected?selected.value:null
+      };
+    });
+
+    submit.disabled=true;
+    submit.textContent="Correction en cours...";
+
+    const {data:resultData,error:submitError}=await sb.rpc(
+      "submit_evaluation",
+      {
+        p_attempt_id:attempt.attempt_id,
+        p_responses:responses
+      }
+    );
+
+    if(submitError){
+      const errorBox=document.createElement("p");
+      errorBox.textContent="Soumission impossible : "+submitError.message;
+      workspace.appendChild(errorBox);
+      submit.disabled=false;
+      submit.textContent="Réessayer";
+      return;
+    }
+
+    const result=Array.isArray(resultData)?resultData[0]:resultData;
+
+    workspace.replaceChildren();
+
+    const resultTitle=document.createElement("h3");
+    resultTitle.textContent="Résultat de votre examen";
+
+    const percent=result.total_points>0
+      ?Math.round(Number(result.score)*100/Number(result.total_points))
+      :0;
+
+    const score=document.createElement("p");
+    score.textContent="Note : "+result.score+" / "+result.total_points+" ("+percent+"%)";
+
+    const status=document.createElement("p");
+    status.textContent=result.passed
+      ?"Félicitations ! Vous avez réussi."
+      :"Vous n'avez pas atteint la note minimale.";
+
+    workspace.append(resultTitle,score,status);
+    submit.disabled=true;
+  });
+
+  workspace.append(heading,instruction,form,submit);
+  workspace.scrollIntoView({behavior:"smooth",block:"start"});
+  button.textContent="Examen démarré";
 }
 
 async function openLesson(lesson){
