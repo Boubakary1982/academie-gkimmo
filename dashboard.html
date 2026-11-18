@@ -131,28 +131,7 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const validStatuses=["active","approved","paid","enrolled"];
 let currentUser=null;
 let enrollments=[];
-<section id="paiements" class="tab panel">
-<h2>Gestion des paiements</h2>
-<div class="tablewrap">
-<table>
-<thead>
-<tr>
-<th>Apprenant</th>
-<th>Formation</th>
-<th>Détail</th>
-<th>Montant</th>
-<th>Méthode</th>
-<th>Référence / preuve</th>
-<th>Statut</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody id="paymentsTable">
-<tr><td colspan="8">Chargement...</td></tr>
-</tbody>
-</table>
-</div>
-</section>
+
 
 function makeCourseCard(course,label,callback,disabled=false){
 const article=document.createElement("article");
