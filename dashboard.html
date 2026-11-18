@@ -365,9 +365,61 @@ async function requestEnrollment(course,button){
 }
 
 
-async function loadCatalog(){
   
+
+async function loadCatalog(){
+
+  const list=document.getElementById("catalogList");
+  list.replaceChildren();
+
+  const {data:courses,error}=await sb.from("courses")
+    .select("id,title,description,category,price")
+    .eq("status","published")
+    .order("title");
+
+  if(error){
+    showMessage("catalogMessage","Erreur : "+error.message,"error");
+    return;
+  }
+
+  if(!courses?.length){
+    showMessage("catalogMessage","Aucune formation publiée.");
+    return;
+  }
+
+  document.getElementById("catalogMessage").hidden=true;
+
+  courses.forEach(course=>{
+    const existing=enrollments.find(e=>e.course_id===course.id);
+    let label="Demander mon inscription";
+    let disabled=false;
+
+    if(existing){
+      const status=String(existing.status||"").toLowerCase();
+
+      if(validStatuses.includes(status)){
+        label="Déjà inscrit";
+        disabled=true;
+      }else if(status==="pending"){
+        label="Demande en attente";
+        disabled=true;
+      }
+    }
+
+    const card=makeCourseCard(
+      course,
+      label,
+      ()=>requestEnrollment(course,card.querySelector("button")),
+      disabled
+    );
+
+    list.appendChild(card);
+  });
+}
+
+
 async function loadPendingPayments(){
+
   const section=document.getElementById("pendingPaymentsSection");
   const list=document.getElementById("pendingPaymentsList");
 
@@ -391,13 +443,19 @@ async function loadPendingPayments(){
     return;
   }
 
-  const courseIds=[...new Set(payments.map(p=>p.course_id).filter(Boolean))];
+  const courseIds=[...new Set(
+    payments.map(p=>p.course_id).filter(Boolean)
+  )];
 
   const {data:courses}=await sb.from("courses")
-    .select("id,title").in("id",courseIds);
+    .select("id,title")
+    .in("id",courseIds);
 
   payments.forEach(payment=>{
-    const course=(courses||[]).find(c=>c.id===payment.course_id);
+
+    const course=(courses||[]).find(
+      c=>c.id===payment.course_id
+    );
 
     const card=document.createElement("div");
     card.className="card";
@@ -415,10 +473,13 @@ async function loadPendingPayments(){
     card.append(title,amount,method);
 
     if(payment.payment_method==="Espèces"){
+
       const info=document.createElement("p");
       info.textContent="Présentez-vous à l'agence GKIMMO pour régler votre paiement.";
       card.appendChild(info);
+
     }else{
+
       const status=document.createElement("p");
       status.textContent=payment.proof_url
         ?"Justificatif transmis. Vérification en attente."
@@ -429,6 +490,7 @@ async function loadPendingPayments(){
       button.textContent="Compléter mon paiement";
 
       button.addEventListener("click",async()=>{
+
         const reference=prompt("Référence de votre transaction :");
         if(!reference||!reference.trim())return;
 
@@ -437,7 +499,9 @@ async function loadPendingPayments(){
         fileInput.accept="image/jpeg,image/png,application/pdf";
 
         const file=await new Promise(resolve=>{
-          fileInput.onchange=()=>resolve(fileInput.files[0]||null);
+          fileInput.onchange=()=>{
+            resolve(fileInput.files[0]||null);
+          };
           fileInput.click();
         });
 
@@ -449,6 +513,7 @@ async function loadPendingPayments(){
         }
 
         const extension=file.name.split(".").pop().toLowerCase();
+
         if(!["jpg","jpeg","png","pdf"].includes(extension)){
           alert("Format accepté : JPG, PNG ou PDF.");
           return;
@@ -458,7 +523,9 @@ async function loadPendingPayments(){
         button.textContent="Transmission...";
 
         try{
-          const path=currentUser.id+"/"+payment.id+"_"+Date.now()+"."+extension;
+
+          const path=currentUser.id+"/"+payment.id+
+            "_"+Date.now()+"."+extension;
 
           const {error:uploadError}=await sb.storage
             .from("payment-proofs")
@@ -481,9 +548,11 @@ async function loadPendingPayments(){
           await loadPendingPayments();
 
         }catch(error){
+
           alert("Erreur : "+error.message);
           button.disabled=false;
           button.textContent="Compléter mon paiement";
+
         }
       });
 
@@ -494,37 +563,8 @@ async function loadPendingPayments(){
   });
 
   section.hidden=false;
-                                          }
-  
-const list=document.getElementById("catalogList");
-list.replaceChildren();
-const {data:courses,error}=await sb.from("courses")
-.select("id,title,description,category,price")
-.eq("status","published").order("title");
-
-if(error){
-showMessage("catalogMessage","Erreur : "+error.message,"error");return;
-}
-if(!courses?.length){
-showMessage("catalogMessage","Aucune formation publiée.");return;
-}
-document.getElementById("catalogMessage").hidden=true;
-
-courses.forEach(course=>{
-const existing=enrollments.find(e=>e.course_id===course.id);
-let label="Demander mon inscription";
-let disabled=false;
-if(existing){
-const status=String(existing.status||"").toLowerCase();
-if(validStatuses.includes(status)){label="Déjà inscrit";disabled=true;}
-else if(status==="pending"){label="Demande en attente";disabled=true;}
-}
-const card=makeCourseCard(course,label,()=>requestEnrollment(course,card.querySelector("button")),disabled);
-list.appendChild(card);
-});
 }
 
-function updateProgress(total,completed){
 const percent=total?Math.round(completed/total*100):0;
 document.getElementById("progressLabel").textContent="Progression : "+percent+"%";
 document.getElementById("progressFill").style.width=percent+"%";
