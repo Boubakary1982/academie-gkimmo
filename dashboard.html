@@ -406,74 +406,113 @@ showMessage("modulesMessage","Aucun module disponible.");
 updateProgress(0,0);return;
 }
 
+
 document.getElementById("modulesMessage").hidden=true;
 
 const {data:progress,error:progressError}=await sb.from("lesson_progress")
-.select("lesson_id,completed").eq("user_id",currentUser.id);
+  .select("lesson_id,completed")
+  .eq("user_id",currentUser.id);
 
 if(progressError){
-showMessage("modulesMessage","Erreur de progression : "+progressError.message,"error");return;
+  showMessage("modulesMessage","Erreur de progression : "+progressError.message,"error");
+  return;
 }
+
 const progressMap=new Map((progress||[]).map(p=>[p.lesson_id,p.completed]));
+
 currentTotal=0;
 currentCompleted=0;
 
+for(const module of modules){
 
+  const article=document.createElement("article");
+  article.className="card";
 
-if(lessonError){
-const warning=document.createElement("p");
-warning.textContent="Erreur de chargement des leçons.";
-article.append(warning);
-container.appendChild(article);continue;
+  const heading=document.createElement("h3");
+  heading.textContent=module.title||"Module";
+  article.appendChild(heading);
+
+  if(module.description){
+    const description=document.createElement("p");
+    description.textContent=module.description;
+    article.appendChild(description);
+  }
+
+  const {data:lessons,error:lessonError}=await sb.from("lessons")
+    .select("*")
+    .eq("module_id",module.id)
+    .order("position");
+
+  if(lessonError){
+    const warning=document.createElement("p");
+    warning.textContent="Erreur de chargement des leçons.";
+    article.appendChild(warning);
+    container.appendChild(article);
+    continue;
+  }
+
+  if(!lessons?.length){
+    const empty=document.createElement("p");
+    empty.textContent="Les leçons seront bientôt disponibles.";
+    article.appendChild(empty);
+    container.appendChild(article);
+    continue;
+  }
+
+  lessons.forEach(lesson=>{
+    currentTotal++;
+
+    const completed=progressMap.get(lesson.id)===true;
+    if(completed)currentCompleted++;
+
+    const row=document.createElement("div");
+    row.className="lesson-row";
+
+    const checkbox=document.createElement("input");
+    checkbox.type="checkbox";
+    checkbox.checked=completed;
+    checkbox.setAttribute("aria-label","Leçon terminée");
+
+    const openButton=document.createElement("button");
+    openButton.className="lesson-open";
+    openButton.textContent="📖 "+(lesson.title||"Ouvrir la leçon");
+    openButton.addEventListener("click",()=>openLesson(lesson));
+
+    checkbox.addEventListener("change",async()=>{
+      checkbox.disabled=true;
+      const value=checkbox.checked;
+
+      const {error}=await sb.from("lesson_progress").upsert({
+        user_id:currentUser.id,
+        lesson_id:lesson.id,
+        completed:value,
+        completed_at:value?new Date().toISOString():null
+      },{onConflict:"user_id,lesson_id"});
+
+      checkbox.disabled=false;
+
+      if(error){
+        checkbox.checked=!value;
+        alert("Erreur d'enregistrement : "+error.message);
+        return;
+      }
+
+      if(value)currentCompleted++;
+      else currentCompleted--;
+
+      updateProgress(currentTotal,currentCompleted);
+    });
+
+    row.append(checkbox,openButton);
+    article.appendChild(row);
+  });
+
+  container.appendChild(article);
 }
-if(!lessons?.length){
-const empty=document.createElement("p");
-empty.textContent="Les leçons seront bientôt disponibles.";
-article.append(empty);container.appendChild(article);continue;
-}
 
-lessons.forEach(lesson=>{
-currentTotal++;
-const completed=progressMap.get(lesson.id)===true;
-if(completed)currentCompleted++;
-
-const row=document.createElement("div");
-row.className="lesson-row";
-const checkbox=document.createElement("input");
-checkbox.type="checkbox";
-checkbox.checked=completed;
-checkbox.setAttribute("aria-label","Leçon terminée");
-
-const openButton=document.createElement("button");
-openButton.className="lesson-open";
-openButton.textContent="📖 "+(lesson.title||"Ouvrir la leçon");
-openButton.addEventListener("click",()=>openLesson(lesson));
-
-checkbox.addEventListener("change",async()=>{
-checkbox.disabled=true;
-const value=checkbox.checked;
-const {error}=await sb.from("lesson_progress").upsert({
-user_id:currentUser.id,
-lesson_id:lesson.id,
-completed:value,
-completed_at:value?new Date().toISOString():null
-},{onConflict:"user_id,lesson_id"});
-checkbox.disabled=false;
-if(error){
-checkbox.checked=!value;
-alert("Erreur d'enregistrement : "+error.message);return;
-}
-if(value)currentCompleted++;else currentCompleted--;
 updateProgress(currentTotal,currentCompleted);
-});
+}
 
-row.append(checkbox,openButton);
-article.appendChild(row);
-});
-container.appendChild(article);
-}
-updateProgress(currentTotal,currentCompleted);
-}
 
 async function loadCourseEvaluations(course){
   const list=document.getElementById("evaluationList");
