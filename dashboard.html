@@ -365,7 +365,7 @@ async function requestEnrollment(course,button){
 }
 
 
-await loadPendingPayments();  
+  
 
 async function loadCatalog(){
 
@@ -991,7 +991,7 @@ document.getElementById("learnerName").textContent=name;
 document.getElementById("profileName").textContent=name;
 document.getElementById("profileEmail").textContent=currentUser.email||"";
 await loadMyCourses();
-await loadCatalog();
+await loadCatalog();await loadPendingPayments();
 }
 
 document.getElementById("backButton").addEventListener("click",()=>{
