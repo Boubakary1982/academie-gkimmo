@@ -132,6 +132,20 @@ const validStatuses=["active","approved","paid","enrolled"];
 let currentUser=null;
 let enrollments=[];
 
+function showMessage(id,text,type="normal"){
+  const element=document.getElementById(id);
+  if(!element)return;
+
+  element.textContent=text;
+  element.className="notice";
+
+  if(type==="error"){
+    element.classList.add("error");
+  }
+
+  element.hidden=false;
+  }
+    
 
 function makeCourseCard(course,label,callback,disabled=false){
 const article=document.createElement("article");
