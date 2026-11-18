@@ -366,6 +366,136 @@ async function requestEnrollment(course,button){
 
 
 async function loadCatalog(){
+  
+async function loadPendingPayments(){
+  const section=document.getElementById("pendingPaymentsSection");
+  const list=document.getElementById("pendingPaymentsList");
+
+  list.replaceChildren();
+
+  const {data:payments,error}=await sb.from("payments")
+    .select("id,course_id,amount,payment_method,transaction_reference,proof_url,created_at")
+    .eq("user_id",currentUser.id)
+    .eq("status","pending")
+    .order("created_at",{ascending:false});
+
+  if(error){
+    showMessage("pendingPaymentsMessage",
+      "Erreur : "+error.message,"error");
+    section.hidden=false;
+    return;
+  }
+
+  if(!payments?.length){
+    section.hidden=true;
+    return;
+  }
+
+  const courseIds=[...new Set(payments.map(p=>p.course_id).filter(Boolean))];
+
+  const {data:courses}=await sb.from("courses")
+    .select("id,title").in("id",courseIds);
+
+  payments.forEach(payment=>{
+    const course=(courses||[]).find(c=>c.id===payment.course_id);
+
+    const card=document.createElement("div");
+    card.className="card";
+
+    const title=document.createElement("h3");
+    title.textContent=course?.title||"Formation";
+
+    const amount=document.createElement("p");
+    amount.textContent="Montant : "+
+      Number(payment.amount).toLocaleString("fr-FR")+" FCFA";
+
+    const method=document.createElement("p");
+    method.textContent="Moyen : "+payment.payment_method;
+
+    card.append(title,amount,method);
+
+    if(payment.payment_method==="Espèces"){
+      const info=document.createElement("p");
+      info.textContent="Présentez-vous à l'agence GKIMMO pour régler votre paiement.";
+      card.appendChild(info);
+    }else{
+      const status=document.createElement("p");
+      status.textContent=payment.proof_url
+        ?"Justificatif transmis. Vérification en attente."
+        :"Référence ou justificatif manquant.";
+
+      const button=document.createElement("button");
+      button.className="primary";
+      button.textContent="Compléter mon paiement";
+
+      button.addEventListener("click",async()=>{
+        const reference=prompt("Référence de votre transaction :");
+        if(!reference||!reference.trim())return;
+
+        const fileInput=document.createElement("input");
+        fileInput.type="file";
+        fileInput.accept="image/jpeg,image/png,application/pdf";
+
+        const file=await new Promise(resolve=>{
+          fileInput.onchange=()=>resolve(fileInput.files[0]||null);
+          fileInput.click();
+        });
+
+        if(!file)return;
+
+        if(file.size>5*1024*1024){
+          alert("Fichier trop volumineux : maximum 5 Mo.");
+          return;
+        }
+
+        const extension=file.name.split(".").pop().toLowerCase();
+        if(!["jpg","jpeg","png","pdf"].includes(extension)){
+          alert("Format accepté : JPG, PNG ou PDF.");
+          return;
+        }
+
+        button.disabled=true;
+        button.textContent="Transmission...";
+
+        try{
+          const path=currentUser.id+"/"+payment.id+"_"+Date.now()+"."+extension;
+
+          const {error:uploadError}=await sb.storage
+            .from("payment-proofs")
+            .upload(path,file,{upsert:false});
+
+          if(uploadError)throw uploadError;
+
+          const {error:proofError}=await sb.rpc(
+            "submit_payment_proof",
+            {
+              p_payment_id:payment.id,
+              p_transaction_reference:reference.trim(),
+              p_proof_url:path
+            }
+          );
+
+          if(proofError)throw proofError;
+
+          alert("Justificatif transmis à GKIMMO avec succès.");
+          await loadPendingPayments();
+
+        }catch(error){
+          alert("Erreur : "+error.message);
+          button.disabled=false;
+          button.textContent="Compléter mon paiement";
+        }
+      });
+
+      card.append(status,button);
+    }
+
+    list.appendChild(card);
+  });
+
+  section.hidden=false;
+                                          }
+  
 const list=document.getElementById("catalogList");
 list.replaceChildren();
 const {data:courses,error}=await sb.from("courses")
