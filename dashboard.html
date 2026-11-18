@@ -564,7 +564,7 @@ async function loadPendingPayments(){
 
   section.hidden=false;
 }
-
+function updateProgress(total,completed){
 const percent=total?Math.round(completed/total*100):0;
 document.getElementById("progressLabel").textContent="Progression : "+percent+"%";
 document.getElementById("progressFill").style.width=percent+"%";
