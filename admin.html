@@ -453,18 +453,119 @@ $("enrollmentsTable").appendChild(tr);
 });
 }
 
+
 async function loadPayments(){
-const {data:rows,error}=await db.from("payments").select("*");
-if(error){tableMessage("paymentsTable",6,error.message);return;}
-if(!rows?.length){tableMessage("paymentsTable",6,"Aucun paiement.");return;}
-$("paymentsTable").innerHTML=rows.map(p=>`
-<tr><td>${esc(p.user_id||"—")}</td>
-<td>${esc(p.course_id||"—")}</td>
-<td>${money(p.amount)}</td>
-<td>${esc(p.method||"—")}</td>
-<td>${esc(p.reference||"—")}</td>
-<td>${esc(p.status||"—")}</td></tr>`).join("");
+  tableMessage("paymentsTable",8,"Chargement des paiements...");
+
+  const {data:rows,error}=await db.from("payments")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  if(error){
+    tableMessage("paymentsTable",8,error.message);
+    return;
+  }
+
+  if(!rows?.length){
+    tableMessage("paymentsTable",8,"Aucun paiement enregistré.");
+    return;
+  }
+
+  const userIds=[...new Set(rows.map(p=>p.user_id).filter(Boolean))];
+  const courseIds=[...new Set(rows.map(p=>p.course_id).filter(Boolean))];
+
+  let users=[];
+  let courseData=[];
+
+  if(userIds.length){
+    const result=await db.from("profiles")
+      .select("id,full_name")
+      .in("id",userIds);
+    users=result.data||[];
+  }
+
+  if(courseIds.length){
+    const result=await db.from("courses")
+      .select("id,title")
+      .in("id",courseIds);
+    courseData=result.data||[];
+  }
+
+  const html=await Promise.all(rows.map(async p=>{
+    const user=users.find(u=>u.id===p.user_id);
+    const course=courseData.find(c=>c.id===p.course_id);
+
+    let proof="Aucune preuve";
+
+    if(p.proof_url){
+      const {data}=await db.storage
+        .from("payment-proofs")
+        .createSignedUrl(p.proof_url,300);
+
+      if(data?.signedUrl){
+        proof=`<a href="${esc(data.signedUrl)}" target="_blank" rel="noopener">Voir le justificatif</a>`;
+      }
+    }
+
+    const detail=
+      "Formation : "+money(p.course_amount)+
+      "<br>Inscription : "+money(p.registration_fee_amount);
+
+    const reference=esc(p.transaction_reference||"—");
+
+    const receipt=p.receipt_number
+      ? "<br>Reçu : "+esc(p.receipt_number)
+      : "";
+
+    const action=p.status==="pending"
+      ? `<button class="gold" data-payment="${esc(p.id)}">Valider</button>`
+      : "—";
+
+    return `<tr>
+      <td>${esc(user?.full_name||p.user_id)}</td>
+      <td>${esc(course?.title||"—")}</td>
+      <td>${detail}</td>
+      <td>${money(p.amount)}</td>
+      <td>${esc(p.payment_method||"—")}</td>
+      <td>${reference}<br>${proof}${receipt}</td>
+      <td>${esc(p.status||"—")}</td>
+      <td>${action}</td>
+    </tr>`;
+  }));
+
+  $("paymentsTable").innerHTML=html.join("");
+
+  $("paymentsTable").querySelectorAll("[data-payment]")
+    .forEach(button=>{
+      button.addEventListener("click",async()=>{
+        const id=button.dataset.payment;
+
+        if(!confirm("Confirmez-vous avoir réellement reçu ce paiement ?")){
+          return;
+        }
+
+        button.disabled=true;
+
+        const {data,error}=await db.rpc(
+          "validate_gkimmo_payment",
+          {p_payment_id:id}
+        );
+
+        if(error){
+          message("Validation impossible : "+error.message,"error");
+          button.disabled=false;
+          return;
+        }
+
+        message("Paiement validé. Reçu : "+data,"success");
+
+        await loadPayments();
+        await loadEnrollments();
+        await loadStats();
+      });
+    });
 }
+
 
 async function refresh(){
 await Promise.all([
