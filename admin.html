@@ -509,7 +509,7 @@ async function loadPayments(){
         proof=`<a href="${esc(data.signedUrl)}" target="_blank" rel="noopener">Voir le justificatif</a>`;
       }
     }
-      "Formation : "+money(p.course_amount)+
+        const detail=  "Formation : "+money(p.course_amount)+
       "<br>Inscription : "+money(p.registration_fee_amount);
 
     const reference=esc(p.transaction_reference||"—");
