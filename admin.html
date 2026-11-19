@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -495,7 +494,10 @@ async function loadPayments(){
     const user=users.find(u=>u.id===p.user_id);
     const course=courseData.find(c=>c.id===p.course_id);
 
-    let proof="Aucune preuve";
+  
+
+        let proof="Aucune preuve";
+    let proofAvailable=false;
 
     if(p.proof_url){
       const {data}=await db.storage
@@ -503,11 +505,10 @@ async function loadPayments(){
         .createSignedUrl(p.proof_url,300);
 
       if(data?.signedUrl){
+        proofAvailable=true;
         proof=`<a href="${esc(data.signedUrl)}" target="_blank" rel="noopener">Voir le justificatif</a>`;
       }
     }
-
-    const detail=
       "Formation : "+money(p.course_amount)+
       "<br>Inscription : "+money(p.registration_fee_amount);
 
@@ -517,9 +518,16 @@ async function loadPayments(){
       ? "<br>Reçu : "+esc(p.receipt_number)
       : "";
 
-    const action=p.status==="pending"
-      ? `<button class="gold" data-payment="${esc(p.id)}">Valider</button>`
-      : "—";
+    const needsProof=["Orange Money","Wave"].includes(p.payment_method);
+
+const canValidate=p.status==="pending" &&
+  (!needsProof || (proofAvailable && Boolean(p.transaction_reference)));
+
+const action=canValidate
+  ? `<button class="gold" data-payment="${esc(p.id)}">Valider</button>`
+  : p.status==="pending" && needsProof
+    ? "Justificatif requis"
+    : "—";
 
     return `<tr>
       <td>${esc(user?.full_name||p.user_id)}</td>
