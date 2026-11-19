@@ -355,7 +355,7 @@ async function requestEnrollment(course,button){
 
     await loadMyCourses();
     await loadCatalog();
-
+await loadPendingPayments();
   }catch(error){
     alert("Erreur : "+error.message);
   }finally{
@@ -991,8 +991,8 @@ document.getElementById("learnerName").textContent=name;
 document.getElementById("profileName").textContent=name;
 document.getElementById("profileEmail").textContent=currentUser.email||"";
 await loadMyCourses();
-await loadCatalog();await loadPendingPayments();
-}
+await loadCatalog();
+await loadPendingPayments();
 
 document.getElementById("backButton").addEventListener("click",()=>{
 document.getElementById("courseDetail").hidden=true;
