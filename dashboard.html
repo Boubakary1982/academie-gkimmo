@@ -950,7 +950,7 @@ async function startLearnerEvaluation(evaluation,button){
   button.textContent="Examen démarré";
 }
 
-async function openLesson(lesson){
+async function openLesson(lesson){currentLesson=lesson;
 document.getElementById("courseDetail").hidden=true;
 document.getElementById("lessonReader").hidden=false;
 document.getElementById("readerTitle").textContent=lesson.title||"Leçon";
@@ -999,7 +999,75 @@ document.getElementById("readerDocument").appendChild(doc);
 }
 }
 
-async function startDashboard(){
+async function sendMalikMessage(){
+  const input=document.getElementById("malikQuestion");
+  const button=document.getElementById("malikSend");
+  const messages=document.getElementById("malikMessages");
+  const status=document.getElementById("malikStatus");
+  const question=input.value.trim();
+
+  if(!question){
+    status.textContent="Veuillez écrire votre question.";
+    return;
+  }
+
+  if(!currentCourse?.id || !currentLesson?.id){
+    status.textContent="Ouvrez d'abord une leçon.";
+    return;
+  }
+
+  button.disabled=true;
+  button.textContent="Malik réfléchit...";
+  status.textContent="Connexion au professeur IA...";
+
+  try{
+    const {data:instructor,error:instructorError}=await sb
+      .from("instructors")
+      .select("id")
+      .eq("display_name","Professeur Malik")
+      .eq("instructor_type","ai")
+      .eq("status","approved")
+      .maybeSingle();
+
+    if(instructorError || !instructor){
+      throw new Error("Professeur Malik introuvable.");
+    }
+
+    const {data,error}=await sb.functions.invoke("professeur-ia",{
+      body:{
+        instructor_id:instructor.id,
+        course_id:currentCourse.id,
+        lesson_id:currentLesson.id,
+        message:question,
+        history:malikHistory
+      }
+    });
+
+    if(error) throw error;
+    if(data?.error) throw new Error(data.error);
+    if(!data?.answer) throw new Error("Réponse du professeur indisponible.");
+
+    malikHistory.push(
+      {role:"user",content:question},
+      {role:"assistant",content:data.answer}
+    );
+
+    malikHistory=malikHistory.slice(-8);
+
+    messages.textContent=malikHistory.map(item=>
+      (item.role==="user"?"Vous : ":"Professeur Malik : ")+item.content
+    ).join("\n\n");
+
+    input.value="";
+    status.textContent="Réponse reçue.";
+
+  }catch(error){
+    status.textContent="Erreur : "+error.message;
+  }finally{
+    button.disabled=false;
+    button.textContent="Envoyer ma question";
+  }
+  }async function startDashboard(){
 const {data:{session},error}=await sb.auth.getSession();
 if(error||!session){
 window.location.replace("auth.html");return;
@@ -1012,7 +1080,7 @@ document.getElementById("profileEmail").textContent=currentUser.email||"";
 await loadMyCourses();
 await loadCatalog();
 await loadPendingPayments();
-
+document.getElementById("malikSend").addEventListener("click",sendMalikMessage);
 document.getElementById("backButton").addEventListener("click",()=>{
 document.getElementById("courseDetail").hidden=true;
 document.getElementById("myCoursesSection").hidden=false;
