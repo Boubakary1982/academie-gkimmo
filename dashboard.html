@@ -1024,7 +1024,7 @@ async function sendMalikMessage(){
     const {data:instructor,error:instructorError}=await sb
       .from("instructors")
       .select("id")
-      .eq("display_name","Professeur Malik")
+      .eq("display_name","Professeur Malik - Droit Immobilier")
       .eq("instructor_type","ai")
       .eq("status","approved")
       .maybeSingle();
