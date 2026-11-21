@@ -197,6 +197,19 @@ function setMode(newMode) {
 
   document.getElementById("password").required = mode !== "reset";
 
+  const isNew = mode === "newpassword";
+  document.getElementById("email").style.display = isNew ? "none" : "";
+  document.querySelector('label[for="email"]').style.display = isNew ? "none" : "";
+  document.getElementById("email").required = !isNew;
+  document.getElementById("password").autocomplete =
+    (mode === "signup" || isNew) ? "new-password" : "current-password";
+  document.getElementById("password").minLength = (mode === "signup" || isNew) ? 8 : 0;
+  if (isNew) {
+    document.getElementById("loginLinks").classList.add("hidden");
+    document.getElementById("signupLinks").classList.add("hidden");
+    document.getElementById("resetLinks").classList.add("hidden");
+  }
+
   if (mode === "login") {
     document.getElementById("pageTitle").textContent =
       "Bienvenue à l'Académie";
@@ -205,6 +218,10 @@ function setMode(newMode) {
     document.getElementById("pageTitle").textContent =
       "Créer un compte apprenant";
     submitBtn.textContent = "Créer mon compte";
+  } else if (mode === "newpassword") {
+    document.getElementById("pageTitle").textContent =
+      "Choisir un nouveau mot de passe";
+    submitBtn.textContent = "Enregistrer le mot de passe";
   } else {
     document.getElementById("pageTitle").textContent =
       "Réinitialiser le mot de passe";
@@ -244,6 +261,9 @@ async function initializeSupabase() {
     }
 
     client = window.supabase.createClient(SUPABASE_URL, KEY);
+    client.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") setMode("newpassword");
+    });
     return true;
   } catch (error) {
     showMessage(
@@ -283,7 +303,7 @@ async function redirectUser(user) {
   if (data.role === "administrateur") {
     window.location.href = "admin.html";
   } else if (data.role === "formateur") {
-    window.location.href = "formateur.html";
+    window.location.href = "dashboard.html"; // formateur.html à créer plus tard
   } else {
     window.location.href = "dashboard.html";
   }
@@ -347,9 +367,16 @@ form.addEventListener("submit", async (event) => {
         );
       }
 
+    } else if (mode === "newpassword") {
+      const { error } = await client.auth.updateUser({ password });
+      if (error) throw error;
+      await client.auth.signOut();
+      setMode("login");
+      showMessage("Mot de passe modifié. Vous pouvez vous connecter.", "success");
+
     } else if (mode === "reset") {
       const { error } = await client.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + "/auth.html"
+        redirectTo: window.location.origin + window.location.pathname
       });
 
       if (error) throw error;
@@ -367,6 +394,7 @@ form.addEventListener("submit", async (event) => {
 
     if (mode === "login") submitBtn.textContent = "Se connecter";
     else if (mode === "signup") submitBtn.textContent = "Créer mon compte";
+    else if (mode === "newpassword") submitBtn.textContent = "Enregistrer le mot de passe";
     else submitBtn.textContent = "Envoyer le lien";
   }
 });
