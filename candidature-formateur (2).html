@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Candidature formateur | API-GKIMMO</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#faf8f2;color:#29251f;line-height:1.6}
+header{background:#38231f;color:white;padding:16px 6%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap}
+header a{color:white;text-decoration:none;border:1px solid #bda17d;padding:8px 12px;border-radius:5px}
+main{max-width:820px;margin:28px auto;padding:0 16px}.hero{background:linear-gradient(120deg,#38231f,#684632);color:white;padding:26px;border-radius:12px;margin-bottom:20px}
+form,.info{background:white;border:1px solid #eee5d9;border-radius:10px;padding:22px;margin:16px 0}
+label{display:block;font-weight:bold;margin:14px 0 6px}input,select,textarea{width:100%;padding:12px;border:1px solid #d8cec0;border-radius:7px;font:inherit}textarea{min-height:90px}
+button{background:#684632;color:white;border:0;padding:13px 18px;border-radius:7px;font-weight:bold;margin-top:18px}button:disabled{opacity:.6}
+.notice{display:none;padding:12px;border-radius:7px;background:#f3ead8;margin:12px 0}.success{background:#e5f5e9;color:#17613a}.error{background:#fce8e6;color:#8b2118}small{color:#766d65}
+</style></head><body>
+<header><strong>API-GKIMMO · ESPACE FORMATEURS</strong><a href="index.html">Accueil</a></header>
+<main>
+<section class="hero"><h1>Devenir formateur à l'Académie GKIMMO</h1><p>Professionnels de l'immobilier, partagez votre expertise et contribuez à former la prochaine génération.</p></section>
+<div class="info"><strong>Processus :</strong> soumettez votre candidature. GKIMMO l'examine. Après approbation, votre profil formateur pourra être créé et vous pourrez recevoir des affectations. Une candidature ne vaut pas approbation.</div>
+<div id="notice" class="notice"></div>
+<form id="applicationForm">
+<label>Nom complet *</label><input id="fullName" required autocomplete="name">
+<label>Téléphone / WhatsApp *</label><input id="phone" type="tel" required autocomplete="tel">
+<label>Spécialité *</label><select id="specialty" required>
+<option value="">Choisir</option><option>Droit immobilier</option><option>Entrepreneuriat immobilier</option><option>Expertise et évaluation immobilière</option><option>Foncier et sécurisation foncière</option><option>Gestion immobilière</option><option>Immobilier digital et PropTech</option><option>Investissement immobilier</option><option>Transactions immobilières</option><option>Autre spécialité immobilière</option></select>
+<label>Expérience professionnelle</label><textarea id="experience" placeholder="Parcours, expériences…"></textarea>
+<label>Diplômes et qualifications</label><textarea id="diploma" placeholder="Diplômes, certifications…"></textarea>
+<label>Disponibilités</label><input id="availability" placeholder="Jours ou horaires disponibles">
+<label>Motivation *</label><textarea id="motivation" required placeholder="Pourquoi souhaitez-vous enseigner à l'Académie GKIMMO ?"></textarea>
+<label>URL de votre CV (facultatif)</label><input id="cv" type="url" placeholder="https://…"><small>Le dépôt direct de fichiers sera ajouté dans une prochaine version.</small>
+<button id="submitBtn" type="submit">Envoyer ma candidature</button>
+</form></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const sb=window.supabase.createClient("https://uhrmfqsrxnmrdfiwcazm.supabase.co","sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A");
+const notice=document.getElementById("notice"),form=document.getElementById("applicationForm"),btn=document.getElementById("submitBtn");
+function showMessage(message,type){notice.textContent=message;notice.className="notice "+type;notice.style.display="block";}
+(async()=>{const {data:{session}}=await sb.auth.getSession();if(!session){showMessage("Connectez-vous d'abord. Redirection vers la connexion…","error");setTimeout(()=>location.href="auth.html",1800);return;}
+const {data:existing}=await sb.from("instructor_applications").select("status").eq("user_id",session.user.id).in("status",["pending","approved"]).limit(1);
+if(existing&&existing.length){form.hidden=true;showMessage(existing[0].status==="approved"?"Votre candidature est déjà approuvée.":"Vous avez déjà une candidature en cours d'examen.","success");}})();
+form.addEventListener("submit",async e=>{e.preventDefault();btn.disabled=true;btn.textContent="Envoi…";const {data:{session}}=await sb.auth.getSession();if(!session){showMessage("Session expirée, reconnectez-vous.","error");btn.disabled=false;btn.textContent="Envoyer ma candidature";return;}
+const payload={user_id:session.user.id,full_name:document.getElementById("fullName").value.trim(),phone:document.getElementById("phone").value.trim(),specialty:document.getElementById("specialty").value,experience:document.getElementById("experience").value.trim()||null,diploma:document.getElementById("diploma").value.trim()||null,availability:document.getElementById("availability").value.trim()||null,motivation:document.getElementById("motivation").value.trim(),cv_url:document.getElementById("cv").value.trim()||null,status:"pending"};
+const {error}=await sb.from("instructor_applications").insert(payload);if(error){showMessage("Erreur : "+error.message,"error");btn.disabled=false;btn.textContent="Envoyer ma candidature";return;}
+form.hidden=true;showMessage("Candidature envoyée. GKIMMO l'étudiera et vous contactera.","success");});
+</script></body></html>
