@@ -3,95 +3,85 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API-GKIMMO | Académie Professionnelle de l'Immobilier</title>
+<title>Modèle hybride | Académie Professionnelle de l'Immobilier</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;color:#263442;line-height:1.6}
-header{background:#102b46;color:white;text-align:center;padding:60px 7%}
-header .brand{color:#e5bd69;font-weight:bold;letter-spacing:3px}
-h1{font-size:clamp(30px,5vw,52px);line-height:1.2}
-header p{max-width:750px;margin:18px auto}
-.btn{display:inline-block;background:#c99a3b;color:#102b46;padding:12px 22px;text-decoration:none;font-weight:bold;border-radius:4px}
-section{max-width:1100px;margin:auto;padding:42px 6%}
-h2{color:#102b46;font-size:28px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
-.card{background:#f6f3ec;padding:20px;border-top:4px solid #c99a3b;border-radius:6px}
-.card h3{color:#102b46;margin-top:0}
-.dark{background:#102b46;color:white;max-width:none;padding-left:max(6%,calc((100% - 968px)/2));padding-right:max(6%,calc((100% - 968px)/2))}
-.dark h2{color:#e5bd69}
-.notice{background:#fff6e5;color:#263442;padding:16px;border-left:4px solid #c99a3b}
-footer{background:#0b2034;color:white;text-align:center;padding:24px}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#1d2b3a;background:#fff;line-height:1.55}
+.hero{background:#0f2a45;color:#fff;text-align:center;padding:48px 18px}
+.hero small{color:#e0b867;letter-spacing:2px;font-size:11px;font-weight:bold}
+.hero h1{font-size:30px;margin:14px auto;max-width:620px}
+.hero p{max-width:600px;margin:8px auto;font-size:14px}
+.btn{display:inline-block;background:#c8963e;color:#1d2b3a;text-decoration:none;font-weight:bold;padding:12px 18px;border-radius:6px;margin:14px 5px 0;font-size:13px}
+.btn.line{background:transparent;color:#fff;border:1px solid #c8963e}
+section{max-width:1000px;margin:0 auto;padding:36px 18px}
+h2{color:#0f2a45;font-size:22px;margin:0 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.card{background:#f5f1e9;border-top:3px solid #c8963e;border-radius:6px;padding:16px}
+.card h3{margin:0 0 6px;font-size:15px}
+.card p{margin:0;font-size:13px;color:#4b5a69}
+.dark{background:#0f2a45;color:#fff;max-width:none}
+.dark .in{max-width:1000px;margin:0 auto}
+.dark h2{color:#e0b867}
+.dark p,.dark li{font-size:14px}
+.box{background:#fff4de;color:#3b3020;border-left:4px solid #c8963e;padding:12px 14px;font-size:13px;margin-top:14px}
+ul{padding-left:20px}
+footer{background:#0a1d31;color:#d7dee6;text-align:center;padding:18px;font-size:12px}
 </style>
 </head>
 <body>
-
-<header>
-<div class="brand">API-GKIMMO</div>
-<h1>Académie Professionnelle de l'Immobilier</h1>
-<p><strong>Le savoir immobilier au service de la professionnalisation.</strong></p>
-<p>Une académie hybride dédiée aux métiers de l'immobilier au Mali et en Afrique francophone.</p>
-<a class="btn" href="#formations">Découvrir nos formations</a>
-</header>
+<div class="hero">
+  <small>API-GKIMMO</small>
+  <h1>Académie Professionnelle de l'Immobilier</h1>
+  <p><strong>Le savoir immobilier au service de la professionnalisation.</strong></p>
+  <p>Une académie hybride dédiée aux métiers de l'immobilier au Mali et en Afrique francophone.</p>
+  <a class="btn" href="index.html#formations">Découvrir nos formations</a>
+  <a class="btn line" href="index.html">Retour à l'accueil</a>
+</div>
 
 <section>
-<h2>Notre modèle hybride</h2>
-<div class="grid">
-<div class="card">
-<h3>Formations GKIMMO</h3>
-<p>Des parcours conçus par l'Académie pour transmettre des compétences pratiques et professionnelles.</p>
-</div>
-<div class="card">
-<h3>Formateurs indépendants</h3>
-<p>Des professionnels partenaires pourront proposer leurs cours, partager leur expertise et accompagner les apprenants.</p>
-</div>
-<div class="card">
-<h3>Apprentissage assisté par l'IA</h3>
-<p>Huit professeurs IA spécialisés sont prévus pour expliquer les notions, répondre aux questions et proposer des exercices.</p>
-</div>
-</div>
-</section>
-
-<section id="formations">
-<h2>Nos domaines de formation</h2>
-<div class="grid">
-<div class="card"><h3>Foncier</h3><p>Documents fonciers, vérifications et sécurisation des parcelles.</p></div>
-<div class="card"><h3>Gestion immobilière</h3><p>Gestion locative, relation bailleur-locataire et suivi technique.</p></div>
-<div class="card"><h3>Transactions</h3><p>Achat, vente, location, négociation et accompagnement.</p></div>
-<div class="card"><h3>Expertise immobilière</h3><p>Évaluation des biens et analyse du marché.</p></div>
-<div class="card"><h3>Investissement</h3><p>Rentabilité, risques et montage de projets immobiliers.</p></div>
-<div class="card"><h3>Droit immobilier</h3><p>Baux, contrats et réglementation applicable.</p></div>
-<div class="card"><h3>Immobilier digital</h3><p>Marketing digital, outils numériques et proptech.</p></div>
-<div class="card"><h3>Entrepreneuriat</h3><p>Création, organisation et développement d'une agence.</p></div>
-</div>
+  <h2>Notre modèle hybride</h2>
+  <div class="grid">
+    <div class="card"><h3>Formations GKIMMO</h3><p>Des parcours conçus par l'Académie pour transmettre des compétences pratiques et professionnelles.</p></div>
+    <div class="card"><h3>Formateurs humains</h3><p>Des professionnels partenaires répondent aux questions des apprenants et animent des cours en direct en ligne.</p></div>
+    <div class="card"><h3>Apprentissage assisté par l'IA</h3><p>Huit professeurs IA spécialisés expliquent les notions, répondent aux questions par écrit et à voix haute, et proposent des exercices.</p></div>
+  </div>
 </section>
 
 <section>
-<h2>Nos huit professeurs IA spécialisés</h2>
-<div class="grid">
-<div class="card"><h3>FONCIER</h3><p>Foncier et sécurisation des parcelles.</p></div>
-<div class="card"><h3>GESTION</h3><p>Administration des biens et gestion locative.</p></div>
-<div class="card"><h3>TRANSACTION</h3><p>Vente, achat, location et négociation.</p></div>
-<div class="card"><h3>EXPERT</h3><p>Évaluation et estimation immobilière.</p></div>
-<div class="card"><h3>INVEST</h3><p>Investissement et rentabilité.</p></div>
-<div class="card"><h3>JURISTE</h3><p>Contrats, baux et cadre juridique.</p></div>
-<div class="card"><h3>DIGITAL</h3><p>Communication et technologies immobilières.</p></div>
-<div class="card"><h3>BUSINESS</h3><p>Entrepreneuriat et développement d'agence.</p></div>
-</div>
+  <h2>Nos huit professeurs IA spécialisés</h2>
+  <div class="grid">
+    <div class="card"><h3>FONCIER</h3><p>Foncier et sécurisation des parcelles.</p></div>
+    <div class="card"><h3>GESTION</h3><p>Administration des biens et gestion locative.</p></div>
+    <div class="card"><h3>TRANSACTION</h3><p>Vente, achat, location et négociation.</p></div>
+    <div class="card"><h3>EXPERT</h3><p>Évaluation et estimation immobilière.</p></div>
+    <div class="card"><h3>INVEST</h3><p>Investissement et rentabilité.</p></div>
+    <div class="card"><h3>JURISTE</h3><p>Contrats, baux et cadre juridique.</p></div>
+    <div class="card"><h3>DIGITAL</h3><p>Communication et technologies immobilières.</p></div>
+    <div class="card"><h3>BUSINESS</h3><p>Entrepreneuriat et développement d'agence.</p></div>
+  </div>
 </section>
 
 <section class="dark">
-<h2>Un parcours professionnel</h2>
-<p>La plateforme complète prévoit un espace apprenant, un espace formateur, des évaluations, le suivi de progression et des attestations ou certificats selon les programmes.</p>
-<div class="notice">
-<strong>État du projet :</strong> cette page présente le modèle et les fonctionnalités prévues. Les comptes, cours interactifs, professeurs IA, paiements et certificats automatisés nécessitent encore leur développement technique. Les contenus juridiques et fonciers devront s'appuyer sur des sources maliennes vérifiées.
-</div>
+  <div class="in">
+    <h2>Un parcours professionnel</h2>
+    <p>La plateforme comprend un espace apprenant, un espace formateur, des évaluations, le suivi de la progression et des questions-réponses avec les formateurs.</p>
+    <p><strong>Disponible :</strong></p>
+    <ul>
+      <li>Création de compte et catalogue de formations</li>
+      <li>Leçons, évaluations et suivi de progression</li>
+      <li>Professeurs IA (écrit et voix) et questions aux formateurs humains</li>
+      <li>Cours en direct en ligne</li>
+      <li>Paiement par Orange Money, Wave ou espèces, avec justificatif validé par l'administration</li>
+    </ul>
+    <div class="box"><strong>À venir :</strong> certificats automatisés et paiement en ligne automatique. Les contenus juridiques et fonciers doivent s'appuyer sur des sources maliennes vérifiées.</div>
+  </div>
 </section>
 
 <section>
-<h2>Contact et renseignements</h2>
-<p>Téléphone / WhatsApp : <strong>+223 76139298</strong><br>
-Email : <strong>boutambour1982@gmail.com</strong></p>
-<a class="btn" href="https://wa.me/22376139298">Nous contacter sur WhatsApp</a>
+  <h2>Contact et renseignements</h2>
+  <p>Téléphone / WhatsApp : <strong>+223 76 13 92 98</strong><br>E-mail : <strong>boutambour1982@gmail.com</strong></p>
+  <a class="btn" href="https://wa.me/22376139298" target="_blank" rel="noopener">Nous contacter sur WhatsApp</a>
+  <a class="btn" style="background:#684632;color:#fff" href="auth.html">Créer un compte</a>
 </section>
 
 <footer>© API-GKIMMO — Académie Professionnelle de l'Immobilier</footer>
