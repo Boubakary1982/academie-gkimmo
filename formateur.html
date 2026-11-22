@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espace formateur | Académie GKIMMO</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f4efe6;color:#2b211c}
+header{background:#3a2219;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+header strong{font-size:14px}
+main{max-width:980px;margin:0 auto;padding:14px}
+.card{background:#fff;border:1px solid #eee5d9;border-radius:10px;padding:16px;margin:12px 0}
+h1,h2,h3{color:#432c23;margin:0 0 10px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.tabs button{background:#eee5d9;color:#432c23;border:0;border-radius:6px;padding:10px 14px;font-weight:bold;cursor:pointer}
+.tabs button.active{background:#3a2219;color:#fff}
+button.p{background:#684632;color:#fff;border:0;border-radius:6px;padding:10px 14px;cursor:pointer;margin-top:8px}
+button.d{background:#8b2118;color:#fff;border:0;border-radius:6px;padding:8px 12px;cursor:pointer;margin:6px 6px 0 0}
+button.out{background:#d8a85b;color:#2b211c;border:0;border-radius:6px;padding:8px 12px;cursor:pointer;font-weight:bold}
+button:disabled{opacity:.6}
+input,select,textarea{width:100%;padding:10px;border:1px solid #d8cdbd;border-radius:6px;font:inherit;margin:4px 0 10px}
+label{font-size:13px;font-weight:bold;color:#513529}
+.notice{padding:12px;border-radius:7px;background:#f3ead8;color:#513529;font-size:14px;margin:12px 0}
+.error{background:#fce8e6;color:#8b2118}
+.ok{background:#e5f5e9;color:#17613a}
+.pill{display:inline-block;background:#f3ead8;color:#72512c;padding:3px 9px;border-radius:20px;font-size:12px;margin-right:6px}
+.item{border-top:1px solid #eee5d9;padding:12px 0}
+.small{font-size:12px;color:#766d65}
+.answer{background:#e5f5e9;color:#17613a;padding:10px;border-radius:7px;white-space:pre-wrap;margin-top:8px}
+.qtext{white-space:pre-wrap;overflow-wrap:anywhere}
+a.join{display:inline-block;background:#66834b;color:#fff;text-decoration:none;padding:9px 14px;border-radius:6px;margin:6px 6px 0 0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header>
+<strong>API-GKIMMO | Espace formateur</strong>
+<button class="out" id="logoutBtn" type="button">Déconnexion</button>
+</header>
+
+<main>
+<div class="card">
+<h1>Bonjour, <span id="who">...</span></h1>
+<p class="small">Répondez aux questions des apprenants et animez des cours en direct.</p>
+</div>
+
+<div id="msg" class="notice" hidden></div>
+
+<div id="app" hidden>
+<div class="tabs">
+<button data-tab="courses" class="active">Mes formations</button>
+<button data-tab="questions">Questions <span id="qCount"></span></button>
+<button data-tab="live">Cours en direct</button>
+</div>
+
+<section id="tab-courses" class="card">
+<h2>Mes formations</h2>
+<div id="coursesList"></div>
+</section>
+
+<section id="tab-questions" class="card" hidden>
+<h2>Questions des apprenants</h2>
+<div id="questionsList"></div>
+</section>
+
+<section id="tab-live" class="card" hidden>
+<h2>Planifier un cours en direct</h2>
+<form id="liveForm">
+<label for="sCourse">Formation</label>
+<select id="sCourse" required></select>
+<label for="sTitle">Titre de la séance</label>
+<input id="sTitle" maxlength="150" required placeholder="Ex : Questions-réponses sur le titre foncier">
+<label for="sDate">Date et heure</label>
+<input id="sDate" type="datetime-local" required>
+<label for="sDuration">Durée (minutes)</label>
+<input id="sDuration" type="number" min="15" max="240" value="60" required>
+<label for="sUrl">Lien de la salle (facultatif)</label>
+<input id="sUrl" type="url" placeholder="https://... (laissez vide pour créer une salle Jitsi gratuite)">
+<label for="sDesc">Description (facultatif)</label>
+<textarea id="sDesc" rows="2" maxlength="500"></textarea>
+<button class="p" type="submit">Planifier la séance</button>
+</form>
+<h2 style="margin-top:22px">Mes séances</h2>
+<div id="sessionsList"></div>
+</section>
+</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL="https://uhrmfqsrxnmrdfiwcazm.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const $=id=>document.getElementById(id);
+let me=null,courses=[];
+
+function say(text,type){const n=$("msg");n.textContent=text||"";n.className="notice "+(type||"");n.hidden=!text;}
+function el(tag,text,cls){const e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e;}
+const fmt=d=>new Date(d).toLocaleString("fr-FR",{dateStyle:"full",timeStyle:"short"});
+const safeUrl=u=>/^https:\/\//i.test(u||"")?u:null;
+const courseTitle=id=>courses.find(c=>String(c.id)===String(id))?.title||"Formation";
+const ids=()=>courses.map(c=>c.id);
+
+document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("active",x===b));
+  ["courses","questions","live"].forEach(t=>$("tab-"+t).hidden=t!==b.dataset.tab);
+}));
+
+async function loadCourses(isAdmin){
+  let list=[];
+  if(isAdmin){
+    const {data}=await sb.from("courses").select("id,title").order("title");
+    list=data||[];
+  }else{
+    const {data:mine}=await sb.from("instructors").select("id").eq("user_id",me.id);
+    const insIds=(mine||[]).map(i=>i.id);
+    if(insIds.length){
+      const {data:links}=await sb.from("instructor_courses").select("course_id").in("instructor_id",insIds);
+      const cIds=[...new Set((links||[]).map(l=>l.course_id))];
+      if(cIds.length){
+        const {data}=await sb.from("courses").select("id,title").in("id",cIds).order("title");
+        list=data||[];
+      }
+    }
+  }
+  courses=list;
+}
+
+function renderCourses(){
+  const box=$("coursesList");box.replaceChildren();
+  courses.forEach(c=>{const d=el("div",null,"item");d.append(el("strong",c.title));box.append(d);});
+  $("sCourse").replaceChildren(...courses.map(c=>{const o=el("option",c.title);o.value=c.id;return o;}));
+}
+
+async function loadQuestions(){
+  const box=$("questionsList");box.replaceChildren();
+  const {data,error}=await sb.from("course_questions").select("*").in("course_id",ids()).order("created_at",{ascending:false});
+  if(error){box.append(el("p","Questions indisponibles : "+error.message,"small"));return;}
+  const rows=[...(data||[])].sort((a,b)=>(a.answer?1:0)-(b.answer?1:0));
+  const pending=rows.filter(r=>!r.answer).length;
+  $("qCount").textContent=pending?"("+pending+")":"";
+  if(!rows.length){box.append(el("p","Aucune question pour le moment.","small"));return;}
+  rows.forEach(q=>{
+    const d=el("div",null,"item");
+    d.append(el("span",courseTitle(q.course_id),"pill"));
+    d.append(el("strong",q.asker_name||"Apprenant"));
+    d.append(el("div",fmt(q.created_at),"small"));
+    d.append(el("p",q.question,"qtext"));
+    if(q.answer){
+      d.append(el("div","Réponse : "+q.answer,"answer"));
+    }else{
+      const ta=el("textarea");ta.rows=3;ta.maxLength=3000;ta.placeholder="Votre réponse...";
+      const b=el("button","Répondre","p");b.type="button";
+      b.addEventListener("click",async()=>{
+        if(!ta.value.trim()){say("Écrivez une réponse.","error");return;}
+        b.disabled=true;
+        const {error:e}=await sb.rpc("answer_course_question",{p_id:q.id,p_answer:ta.value});
+        if(e){say("Envoi impossible : "+e.message,"error");b.disabled=false;return;}
+        say("Réponse envoyée.","ok");
+        await loadQuestions();
+      });
+      d.append(ta,b);
+    }
+    box.append(d);
+  });
+}
+
+async function loadSessions(){
+  const box=$("sessionsList");box.replaceChildren();
+  const {data,error}=await sb.from("live_sessions").select("*").in("course_id",ids()).order("starts_at",{ascending:false});
+  if(error){box.append(el("p","Séances indisponibles : "+error.message,"small"));return;}
+  if(!data?.length){box.append(el("p","Aucune séance planifiée.","small"));return;}
+  data.forEach(s=>{
+    const d=el("div",null,"item");
+    d.append(el("span",courseTitle(s.course_id),"pill"));
+    if(s.status!=="planned")d.append(el("span",s.status==="cancelled"?"Annulée":"Terminée","pill"));
+    d.append(el("strong",s.title));
+    d.append(el("div",fmt(s.starts_at)+" · "+s.duration_minutes+" min","small"));
+    if(s.description)d.append(el("p",s.description,"qtext"));
+    const url=safeUrl(s.meeting_url);
+    if(url&&s.status==="planned"){
+      const a=el("a","Ouvrir la salle","join");a.href=url;a.target="_blank";a.rel="noopener";d.append(a);
+    }
+    if(s.status==="planned"){
+      const done=el("button","Marquer terminée","p");done.type="button";
+      done.addEventListener("click",()=>setSession(s.id,"done"));
+      const cancel=el("button","Annuler","d");cancel.type="button";
+      cancel.addEventListener("click",()=>{if(confirm("Annuler cette séance ?"))setSession(s.id,"cancelled");});
+      d.append(done,cancel);
+    }
+    box.append(d);
+  });
+}
+
+async function setSession(id,status){
+  const {error}=await sb.from("live_sessions").update({status}).eq("id",id);
+  if(error){say("Modification impossible : "+error.message,"error");return;}
+  await loadSessions();
+}
+
+$("liveForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  let url=$("sUrl").value.trim();
+  if(url&&!safeUrl(url)){say("Le lien doit commencer par https://","error");return;}
+  if(!url){
+    const rnd=crypto.getRandomValues(new Uint32Array(2));
+    url="https://meet.jit.si/GKIMMO-"+rnd[0].toString(36)+rnd[1].toString(36);
+  }
+  const {error}=await sb.from("live_sessions").insert({
+    course_id:$("sCourse").value,
+    title:$("sTitle").value.trim(),
+    description:$("sDesc").value.trim()||null,
+    starts_at:new Date($("sDate").value).toISOString(),
+    duration_minutes:Number($("sDuration").value),
+    meeting_url:url
+  });
+  if(error){say("Planification impossible : "+error.message,"error");return;}
+  $("liveForm").reset();$("sDuration").value=60;
+  say("Séance planifiée. Les apprenants inscrits la verront dans leur formation.","ok");
+  await loadSessions();
+});
+
+$("logoutBtn").addEventListener("click",async()=>{
+  await sb.auth.signOut();
+  window.location.replace("auth.html");
+});
+
+async function start(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.replace("auth.html");return;}
+  me=session.user;
+  const {data:profile}=await sb.from("profiles").select("full_name,role").eq("id",me.id).maybeSingle();
+  $("who").textContent=profile?.full_name||me.email||"formateur";
+  if(!profile||!["formateur","administrateur"].includes(profile.role)){
+    say("Cet espace est réservé aux formateurs. Retournez à votre espace apprenant.","error");
+    return;
+  }
+  await loadCourses(profile.role==="administrateur");
+  if(!courses.length){
+    say("Aucune formation ne vous est encore affectée. Contactez l'administration GKIMMO.");
+    return;
+  }
+  $("app").hidden=false;
+  renderCourses();
+  await Promise.all([loadQuestions(),loadSessions()]);
+}
+start();
+</script>
+</body>
+</html>
