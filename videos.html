@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vidéos des professeurs | Académie GKIMMO</title>
+<style>
+:root{--bg:#f4efe6;--card:#ffffff;--ink:#2b211c;--muted:#6f655c;--brand:#3a2219;--gold:#d4a85b;--line:#e3d8c6;--sub:#2b211c}
+@media (prefers-color-scheme:dark){:root{--bg:#17110d;--card:#241a14;--ink:#f3eadb;--muted:#b9ab98;--brand:#0f0a07;--line:#3b2d23;--sub:#000}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif;line-height:1.45}
+header{background:var(--brand);color:#fff;padding:12px 16px;font-size:13px}
+header strong{color:var(--gold)}
+header a{color:#fff;float:right;font-size:12px}
+main{max-width:760px;margin:0 auto;padding:12px}
+h2{font-size:16px;margin:8px 4px}
+.pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:14px}
+.pick button{display:flex;gap:8px;align-items:center;text-align:left;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px;cursor:pointer;font:inherit}
+.pick button.on{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+.pick .th{width:44px;height:44px;border-radius:50%;overflow:hidden;flex:none}
+.pick .th svg,.avatar svg{width:100%;height:100%;display:block}
+.pick b{display:block;font-size:12px}
+.pick span{font-size:11px;color:var(--muted)}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.top{display:flex;gap:14px;align-items:center;padding:16px;border-bottom:1px solid var(--line)}
+.avatar{width:96px;height:96px;border-radius:50%;overflow:hidden;border:3px solid var(--line);flex:none}
+.avatar .mouth,.avatar .eye{transform-box:fill-box;transform-origin:center}
+.avatar .eye{animation:blink 4.5s infinite}
+.avatar.speaking{box-shadow:0 0 0 5px rgba(102,131,75,.5);animation:pulse 1.1s infinite}
+.avatar.speaking .mouth{animation:talk .26s infinite alternate}
+@keyframes talk{from{transform:scaleY(.7)}to{transform:scaleY(3.4)}}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(102,131,75,.5)}50%{box-shadow:0 0 0 8px rgba(102,131,75,.15)}}
+.who strong{display:block;font-size:16px}
+.who span{font-size:12px;color:var(--muted)}
+.slide{padding:20px 18px;min-height:220px}
+.slide h1{font-size:21px;margin:0 0 14px}
+.slide ul{margin:0;padding-left:20px}
+.slide li{margin:0 0 10px;font-size:16px;opacity:0;animation:in .6s forwards}
+.slide li:nth-child(2){animation-delay:.7s}
+.slide li:nth-child(3){animation-delay:1.4s}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.sub{background:var(--sub);color:#fff;padding:14px 16px;font-size:15px;min-height:76px}
+.warn{background:var(--gold);color:#2b211c;padding:10px 16px;font-size:13px}
+.warn a{color:#2b211c;font-weight:bold}
+.bar{height:5px;background:var(--line)}
+.bar i{display:block;height:100%;width:0;background:var(--gold);transition:width .6s}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px}
+.controls button{font:inherit;border:0;border-radius:8px;padding:12px 16px;cursor:pointer;font-weight:bold}
+.main{background:var(--brand);color:#fff}
+.alt{background:transparent;color:var(--ink);border:1px solid var(--line)!important}
+.dots{display:flex;gap:6px;margin-left:auto}
+.dots button{width:14px;height:14px;padding:0!important;border-radius:50%;background:var(--line)}
+.dots button.on{background:var(--gold)}
+.note{font-size:12px;color:var(--muted);margin:12px 4px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><a href="index.html">Accueil</a><strong>API-GKIMMO</strong> · Vidéos des professeurs</header>
+<main>
+  <h2>Choisissez un professeur</h2>
+  <div class="pick" id="pick"></div>
+  <div class="stage">
+    <div class="top">
+      <div class="avatar" id="avatar"></div>
+      <div class="who"><strong id="pName"></strong><span id="pSub"></span></div>
+    </div>
+    <div class="slide" id="slide"></div>
+    <div class="sub" id="sub"></div>
+    <div class="warn" id="warn" hidden></div>
+    <div class="bar"><i id="prog"></i></div>
+    <div class="controls">
+      <button class="main" id="mainBtn" type="button">▶ Lancer la vidéo</button>
+      <button class="alt" id="stopBtn" type="button" hidden>⏹ Arrêter</button>
+      <button class="alt" id="testBtn" type="button">🔊 Tester le son</button>
+      <div class="dots" id="dots"></div>
+    </div>
+  </div>
+  <p class="note">Leçons pédagogiques d’environ deux minutes, présentées par des professeurs IA. Elles ne remplacent pas un conseil juridique, financier ou professionnel : vérifiez toujours les textes officiels du Mali. Pour entendre la voix, connectez-vous à votre compte.</p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const TUTOR_LOOKS={
+  juriste:{skin:"#8d5a3b",hair:"#1a1410",style:"short",glasses:true,outfit:"#25324f",accent:"#8b2332",bg:"#e8dfcf",g:"m",pitch:.9,rate:.95},
+  foncier:{skin:"#6b4226",hair:"#d9d9d9",style:"short",beard:true,outfit:"#a8742a",accent:"#f2d6a2",bg:"#efe4cf",g:"m",pitch:.8,rate:.9},
+  gestion:{skin:"#a0674a",hair:"#16110e",style:"afro",outfit:"#3f6b4b",accent:"#e8c872",bg:"#e6efe3",g:"f",pitch:1.1,rate:1,lip:"#7a2a3a"},
+  transaction:{skin:"#c68b59",hair:"#2a1b12",style:"bun",outfit:"#e9e6df",accent:"#c79a2e",bg:"#efe8d6",g:"f",pitch:1.1,rate:1.05,lip:"#7a2a3a"},
+  expert:{skin:"#7a4a30",hair:"#1a1410",style:"short",glasses:true,outfit:"#5a5f66",accent:"#f0f0f0",bg:"#f1e2d0",g:"m",pitch:.95,rate:.95},
+  invest:{skin:"#5b3a24",hair:"#0f0c0a",style:"short",beard:true,outfit:"#1e1e22",accent:"#d4a52a",bg:"#e4e0d6",g:"m",pitch:.85,rate:1},
+  digital:{skin:"#b97a56",hair:"#2a1a14",style:"short",outfit:"#1f7f84",accent:"#ffffff",bg:"#e2f0ee",g:"m",pitch:1.05,rate:1.1},
+  business:{skin:"#946141",hair:"#120d0a",style:"wrap",wrap:"#6b2535",outfit:"#3b2a4f",accent:"#e9d8a6",bg:"#efe2e4",g:"f",pitch:1.1,rate:1.05,lip:"#7a2a3a"}
+};
+function tutorKey(name){
+  const n=(name||"").toLowerCase();
+  const map=[["foncier","foncier"],["gestion","gestion"],["transaction","transaction"],["expert","expert"],["invest","invest"],["proptech","digital"],["digital","digital"],["entrepreneur","business"],["business","business"]];
+  for(const [word,key] of map){if(n.includes(word))return key;}
+  return "juriste";
+}
+function avatarSVG(k){
+  const L=TUTOR_LOOKS[k]||TUTOR_LOOKS.juriste;
+  const hairBack=L.style==="afro"?`<circle cx="100" cy="72" r="50" fill="${L.hair}"/>`:"";
+  let hairTop="";
+  if(L.style==="short"||L.style==="bun")hairTop=`<path d="M62 80 Q60 40 100 40 Q140 40 138 80 Q124 58 100 58 Q76 58 62 80Z" fill="${L.hair}"/>`;
+  if(L.style==="bun")hairTop+=`<circle cx="100" cy="34" r="13" fill="${L.hair}"/>`;
+  if(L.style==="wrap")hairTop=`<path d="M58 80 Q56 34 100 34 Q144 34 142 80 Q124 56 100 56 Q76 56 58 80Z" fill="${L.wrap}"/><circle cx="132" cy="40" r="12" fill="${L.wrap}"/>`;
+  if(L.style==="afro")hairTop=`<path d="M64 80 Q66 52 100 52 Q134 52 136 80 Q120 64 100 64 Q80 64 64 80Z" fill="${L.hair}"/>`;
+  const beard=L.beard?`<path d="M64 92 Q66 132 100 134 Q134 132 136 92 Q128 114 100 116 Q72 114 64 92Z" fill="${L.hair}"/>`:"";
+  const glasses=L.glasses?`<g fill="none" stroke="#1d1d1d" stroke-width="2.5"><circle cx="84" cy="88" r="11"/><circle cx="116" cy="88" r="11"/><path d="M95 88h10"/></g>`:"";
+  return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Professeur IA">
+<rect width="200" height="200" fill="${L.bg}"/>${hairBack}
+<rect x="88" y="118" width="24" height="24" fill="${L.skin}"/>
+<path d="M26 200 Q30 144 80 132 L120 132 Q170 144 174 200Z" fill="${L.outfit}"/>
+<path d="M84 132 L100 154 L116 132Z" fill="${L.skin}"/>
+<path d="M100 150 L93 160 L100 196 L107 160Z" fill="${L.accent}"/>
+<ellipse cx="100" cy="90" rx="38" ry="44" fill="${L.skin}"/>${hairTop}${beard}
+<ellipse class="eye" cx="84" cy="88" rx="4" ry="4.5" fill="#1b1b1b"/><ellipse class="eye" cx="116" cy="88" rx="4" ry="4.5" fill="#1b1b1b"/>
+<path d="M76 77 Q84 72 92 77M108 77 Q116 72 124 77" stroke="#1b1b1b" stroke-width="2.5" fill="none" stroke-linecap="round"/>${glasses}
+<path d="M100 92 L96 106 Q100 108 104 106Z" fill="#00000022"/>
+<ellipse class="mouth" cx="100" cy="116" rx="10" ry="2.6" fill="${L.lip||"#4a1a1a"}"/></svg>`;
+}
+
+
+const LESSONS=[
+{key:"juriste",name:"Professeur Malik",sub:"Droit immobilier",voice:"onyx",scenes:[
+ {t:"Promesse de vente ou vente définitive ?",b:["Droit immobilier","Avec le professeur Malik"],say:"Bonjour, je suis le professeur Malik, votre professeur de droit immobilier. Aujourd’hui, une question que vos futurs clients vont vous poser : après la signature d’une promesse de vente, est-on déjà propriétaire ?"},
+ {t:"1. La promesse de vente",b:["Un engagement écrit avant la vente","Elle fixe le bien, le prix et les conditions","Elle ne remplace pas la vente définitive"],say:"Commençons par la promesse de vente. C’est un engagement écrit, signé avant la vente. Elle fixe le bien, le prix et les conditions à respecter, par exemple la date de signature de l’acte définitif. Mais attention : elle prépare la vente, elle ne la remplace pas."},
+ {t:"2. La vente définitive",b:["Acte de vente, de préférence devant notaire","Paiement du prix et remise d’un reçu","Titre foncier : inscription à la Conservation foncière"],say:"La vente définitive, elle, est conclue par l’acte de vente, de préférence devant notaire, avec le paiement du prix. Pour un immeuble qui a un titre foncier, il faut ensuite faire inscrire le changement de propriétaire à la Conservation foncière. Sans cette étape, l’acheteur n’est pas bien protégé face aux tiers."},
+ {t:"3. Avant de payer, vérifiez",b:["Le titre foncier et l’identité du vendeur","L’absence d’hypothèque ou de litige","Un reçu pour chaque somme versée"],say:"Avant de payer, trois vérifications. Un : le titre foncier et l’identité réelle du vendeur. Deux : l’absence d’hypothèque ou de litige sur le bien. Trois : un reçu pour chaque somme versée. Ne payez jamais sans preuve écrite."},
+ {t:"À vous de répondre",b:["Votre client dit : « J’ai signé la promesse, la maison est à moi. »","Vrai ou faux ?"],pause:4500,say:"Voici votre exercice. Votre client dit : « J’ai signé la promesse de vente, donc la maison est à moi. » Vrai ou faux ? Prenez quelques secondes pour réfléchir."},
+ {t:"Réponse : faux",b:["La promesse prépare la vente","Il faut la vente définitive, puis l’inscription foncière"],say:"La réponse est : faux. La promesse prépare la vente, mais le client ne sera réellement protégé qu’après la vente définitive, puis l’inscription au titre foncier. Ce cours est pédagogique : vérifiez toujours les textes officiels du Mali, ou demandez conseil à un notaire. À bientôt pour la suite !"}
+]},
+{key:"foncier",name:"Professeur Moussa",sub:"Foncier et sécurisation",voice:"echo",scenes:[
+ {t:"Sécuriser l’achat d’un terrain",b:["Foncier et sécurisation","Avec le professeur Moussa"],say:"Bonjour, je suis le professeur Moussa, spécialiste du foncier. Beaucoup de personnes perdent leurs économies en achetant un terrain mal vérifié. Voyons comment sécuriser votre achat."},
+ {t:"1. Les documents",b:["Le titre foncier : le document le plus solide","Les autres papiers sont plus fragiles","Toujours demander l’original"],say:"Premier point : les documents. Le titre foncier est le document le plus solide, car il est inscrit au livre foncier. Les autres papiers, comme un reçu de vente ancien ou une attestation, sont plus fragiles et doivent toujours être vérifiés. Demandez toujours l’original, jamais seulement une photocopie."},
+ {t:"2. Les vérifications",b:["Interroger les services des domaines et du cadastre","Vérifier le vendeur et l’absence de litige","Visiter le terrain et rencontrer les voisins"],say:"Deuxième point : les vérifications. Interrogez les services compétents, comme les domaines, le cadastre ou la conservation foncière, pour confirmer le propriétaire et l’absence d’hypothèque. Vérifiez l’identité du vendeur, visitez le terrain et rencontrez les voisins pour détecter un litige."},
+ {t:"À vous de répondre",b:["Un vendeur montre un ancien reçu de vente","« Le terrain est à moi, payez aujourd’hui »","Faut-il payer ?"],pause:4500,say:"Voici votre exercice. Un vendeur vous montre seulement un ancien reçu de vente et vous presse de payer aujourd’hui. Faut-il payer ? Réfléchissez quelques secondes."},
+ {t:"Réponse : non, pas encore",b:["Vérifier d’abord le titre et le vendeur","Ne jamais payer sous pression","Un acte écrit, de préférence devant notaire"],say:"La réponse est : non, pas encore. Un simple reçu ne suffit pas. Vérifiez d’abord le titre et le vendeur, ne payez jamais sous pression, et passez par un acte écrit, de préférence devant notaire. Contenu pédagogique : vérifiez toujours les textes officiels du Mali. À bientôt !"}
+]},
+{key:"gestion",name:"Professeure Fatou",sub:"Gestion immobilière",voice:"nova",scenes:[
+ {t:"Bien gérer un bien en location",b:["Gestion immobilière","Avec la professeure Fatou"],say:"Bonjour, je suis la professeure Fatou, spécialiste de la gestion immobilière. Un propriétaire vous confie son bien : comment le gérer sérieusement et éviter les conflits avec le locataire ?"},
+ {t:"1. Le mandat de gestion",b:["Un écrit signé avec le propriétaire","Vos missions et votre rémunération","Les limites de vos pouvoirs"],say:"Premier point : le mandat de gestion. Il se fait par écrit et précise vos missions, votre rémunération et les limites de vos pouvoirs. Sans mandat clair, le moindre désaccord devient un conflit."},
+ {t:"2. Le suivi du locataire",b:["État des lieux à l’entrée et à la sortie","Une quittance pour chaque loyer payé","Rappel écrit et daté en cas de retard"],say:"Deuxième point : le suivi. Faites un état des lieux à l’entrée et à la sortie, remettez une quittance pour chaque loyer payé, et traitez tout retard par un rappel écrit et daté. L’écrit protège le propriétaire comme le locataire."},
+ {t:"À vous de répondre",b:["Un locataire doit deux mois de loyer","Le propriétaire veut changer la serrure","Que faites-vous ?"],pause:4500,say:"Voici votre exercice. Un locataire a deux mois de retard et le propriétaire veut changer la serrure. Que faites-vous ? Réfléchissez quelques secondes."},
+ {t:"Réponse : rester dans la loi",b:["Rappel écrit, puis accord de paiement écrit","Jamais de serrure changée ni de coupure de force","Sinon, passer par la voie légale"],say:"Voici la bonne démarche. Envoyez un rappel écrit, proposez un accord de paiement écrit, et si cela échoue, passez par la voie légale. Ne changez jamais la serrure et ne coupez jamais l’eau ou l’électricité de force. Contenu pédagogique : vérifiez les textes officiels du Mali. À bientôt !"}
+]},
+{key:"transaction",name:"Professeure Mariam",sub:"Transactions immobilières",voice:"shimmer",scenes:[
+ {t:"Conduire une vente de A à Z",b:["Transactions immobilières","Avec la professeure Mariam"],say:"Bonjour, je suis la professeure Mariam, spécialiste des transactions. Vendre un bien demande de la méthode. Voici les grandes étapes, et comment négocier sans perdre la confiance de vos clients."},
+ {t:"1. Les étapes d’une vente",b:["Mandat écrit et estimation du prix","Visites et offre de l’acheteur","Promesse, acte de vente, remise des clés"],say:"Premier point : les étapes. D’abord un mandat écrit et une estimation du prix. Puis les visites et l’offre de l’acheteur. Ensuite la promesse de vente, l’acte de vente, et enfin la remise des clés. Chaque étape doit laisser une trace écrite."},
+ {t:"2. Bien négocier",b:["Écouter le besoin du client","Justifier le prix avec des comparables","Ne jamais mettre la pression"],say:"Deuxième point : la négociation. Écoutez d’abord le besoin du client. Justifiez le prix avec des exemples de biens comparables. Et ne mettez jamais la pression : un client pressé qui regrette ne revient pas."},
+ {t:"À vous de répondre",b:["Une offre 20 % sous le prix demandé","Le vendeur est absent","Que faites-vous ?"],pause:4500,say:"Voici votre exercice. Un acheteur propose vingt pour cent de moins que le prix demandé, et le vendeur est absent. Que faites-vous ? Réfléchissez quelques secondes."},
+ {t:"Réponse : contre-proposer",b:["Ne pas refuser net, ne pas accepter seul","Transmettre l’offre au vendeur","Une contre-offre appuyée sur des comparables"],say:"La bonne réponse : ne refusez pas net, et n’acceptez jamais seul. Transmettez l’offre au vendeur, puis proposez une contre-offre appuyée sur des biens comparables. Contenu pédagogique : vérifiez les règles en vigueur au Mali. À bientôt !"}
+]},
+{key:"expert",name:"Professeur Karim",sub:"Expertise immobilière",voice:"fable",scenes:[
+ {t:"Estimer la valeur d’un bien",b:["Évaluation immobilière","Avec le professeur Karim"],say:"Bonjour, je suis le professeur Karim, spécialiste de l’évaluation immobilière. Combien vaut un bien ? Voici deux méthodes simples pour répondre avec des chiffres, et pas seulement avec une impression."},
+ {t:"1. La méthode par comparaison",b:["Biens semblables récemment vendus","Emplacement, surface, état et titre","Ajuster selon les différences"],say:"Première méthode : la comparaison. Cherchez des biens semblables, vendus récemment dans le même quartier. Comparez l’emplacement, la surface, l’état et le type de titre. Puis ajustez le prix selon les différences."},
+ {t:"2. La méthode par le revenu",b:["Valeur = loyer annuel ÷ rendement attendu","Exemple : 1 800 000 FCFA par an","À 8 % : environ 22 500 000 FCFA"],say:"Deuxième méthode : le revenu. La valeur d’un immeuble loué est le loyer annuel divisé par le rendement attendu. Exemple : un loyer de cent cinquante mille francs par mois fait un million huit cent mille par an. Avec un rendement attendu de huit pour cent, la valeur est d’environ vingt-deux millions cinq cent mille francs CFA."},
+ {t:"À vous de calculer",b:["Loyers : 2 400 000 FCFA par an","Rendement attendu : 10 %","Quelle est la valeur ?"],pause:6000,say:"Voici votre exercice. Un immeuble rapporte deux millions quatre cent mille francs par an. Le rendement attendu est de dix pour cent. Quelle est sa valeur ? Prenez quelques secondes pour calculer."},
+ {t:"Réponse : 24 000 000 FCFA",b:["2 400 000 ÷ 0,10 = 24 000 000","C’est une estimation, à confirmer","Croiser avec la comparaison"],say:"La réponse : vingt-quatre millions de francs CFA, car deux millions quatre cent mille divisé par zéro virgule dix donne vingt-quatre millions. C’est une estimation : croisez-la toujours avec la méthode par comparaison. À bientôt !"}
+]},
+{key:"invest",name:"Professeur Sékou",sub:"Investissement immobilier",voice:"onyx",scenes:[
+ {t:"Calculer la rentabilité",b:["Investissement immobilier","Avec le professeur Sékou"],say:"Bonjour, je suis le professeur Sékou, spécialiste de l’investissement. Avant d’acheter un bien pour le louer, il faut calculer sa rentabilité. Voyons comment faire simplement."},
+ {t:"1. La rentabilité brute",b:["Loyer annuel ÷ prix d’achat × 100","Exemple : prix 20 000 000 FCFA","Loyer 150 000 FCFA par mois : 9 %"],say:"Premier calcul : la rentabilité brute. C’est le loyer annuel divisé par le prix d’achat, multiplié par cent. Exemple : un bien acheté vingt millions, loué cent cinquante mille francs par mois, soit un million huit cent mille par an. La rentabilité brute est de neuf pour cent."},
+ {t:"2. La rentabilité nette et les risques",b:["On retire charges, impôts et loyers non perçus","Exemple : 1 500 000 ÷ 20 000 000 = 7,5 %","Risques : impayés, vacance, titre, travaux"],say:"Deuxième calcul : la rentabilité nette. On retire les charges, les impôts et les périodes sans loyer. S’il reste un million cinq cent mille, la rentabilité nette est de sept virgule cinq pour cent. N’oubliez pas les risques : impayés, logement vide, titre contesté, travaux imprévus."},
+ {t:"À vous de calculer",b:["Prix : 30 000 000 FCFA","Loyer annuel : 2 400 000 FCFA","
