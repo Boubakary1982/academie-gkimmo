@@ -758,7 +758,8 @@ document.getElementById("hqSend").addEventListener("click",sendHumanQuestion);
 document.getElementById("tutorExplain").addEventListener("click",tutorExplain);
 document.getElementById("tutorVoice").addEventListener("click",()=>{if("speechSynthesis" in window){speechSynthesis.cancel();tutorSpeak(document.getElementById("malikMessages").textContent);}});
 document.getElementById("tutorStop").addEventListener("click",()=>{if("speechSynthesis" in window)speechSynthesis.cancel();document.getElementById("tutorAvatar").classList.remove("speaking");});
-document.getElementById("malikSend").addEventListener("click",()=>{const box=document.getElementById("malikQuestion");tutorAnswer(box.value);box.value="";});
+document.getElementById("malikSend").addEventListener("click",async()=>{const box=document.getElementById("malikQuestion");const q=box.value.trim();if(!q)return;const status=document.getElementById("malikStatus");const messages=document.getElementById("malikMessages");status.textContent="Malik réfléchit...";box.disabled=true;try{const {data,error}=await sb.functions.invoke("malik-ai-tutor",{body:{question:q,lessonTitle:currentLesson?.title||currentLesson?.name||"Leçon",lessonContent:currentLesson?.content||currentLesson?.lesson_content||currentLesson?.description||"",courseTitle:currentCourse?.title||"Formation",history:malikHistory}});if(error)throw error;const answer=data?.answer||"Malik n'a pas pu produire de réponse.";messages.textContent=answer;malikHistory.push({question:q,answer});tutorSpeak(answer);box.value="";status.textContent="Réponse de Malik reçue.";}catch(error){status.textContent="Erreur : "+(error.message||String(error));messages.textContent="Impossible de joindre Malik pour le moment. Vérifiez la connexion et réessayez.";}finally{box.disabled=false;box.focus();}});
+
 document.getElementById("malikMic").addEventListener("click",startMic);
 initializeDashboard();
 </script>
