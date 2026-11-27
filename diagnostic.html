@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnostic | Académie GKIMMO</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4efe6;color:#2b211c;line-height:1.45}
+header{background:#3a2219;color:#fff;padding:12px 16px;font-size:14px}
+header strong{color:#d4a85b}
+main{max-width:720px;margin:0 auto;padding:12px}
+.card{background:#fff;border:1px solid #e3d8c6;border-radius:10px;padding:14px;margin:10px 0}
+h2{font-size:15px;margin:0 0 8px;color:#432c23}
+.row{display:flex;gap:8px;padding:7px 0;border-top:1px solid #f0e8da;font-size:13px}
+.row:first-of-type{border-top:0}
+.ic{width:22px;flex:none}
+.row small{display:block;color:#766d65;font-size:12px;overflow-wrap:anywhere}
+button{font:inherit;border:0;border-radius:8px;padding:12px 16px;cursor:pointer;font-weight:bold;margin:4px 6px 4px 0}
+.p{background:#3a2219;color:#fff}
+.g{background:#66834b;color:#fff}
+.o{background:#d4a85b;color:#2b211c}
+.note{font-size:12px;color:#766d65}
+</style>
+</head>
+<body>
+<header><strong>API-GKIMMO</strong> · Diagnostic du site</header>
+<main>
+  <div class="card">
+    <button class="p" id="runBtn" type="button">▶ Lancer le diagnostic</button>
+    <button class="o" id="copyBtn" type="button">📋 Copier le rapport</button>
+    <p class="note">Cette page ne modifie rien. Après le diagnostic, touchez « Copier le rapport » et collez-le dans la conversation avec Claude.</p>
+  </div>
+  <div id="out"></div>
+</main>
+<script>
+const URL_SB="https://uhrmfqsrxnmrdfiwcazm.supabase.co";
+const KEY="sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
+const SESSION_KEY="sb-uhrmfqsrxnmrdfiwcazm-auth-token";
+const out=document.getElementById("out");
+let report=[];
+function section(t){const c=document.createElement("div");c.className="card";const h=document.createElement("h2");h.textContent=t;c.append(h);out.append(c);report.push("\n## "+t);return c;}
+function row(card,icon,title,detail){
+  const r=document.createElement("div");r.className="row";
+  const i=document.createElement("div");i.className="ic";i.textContent=icon;
+  const b=document.createElement("div");
+  const t=document.createElement("div");t.textContent=title;b.append(t);
+  if(detail){const s=document.createElement("small");s.textContent=detail;b.append(s);}
+  r.append(i,b);card.append(r);
+  const entry={icon,title,detail};
+  report.push(icon+" "+title+(detail?" — "+detail:""));
+  return {update(ic,tt,dd){i.textContent=ic;t.textContent=tt;let s=b.querySelector("small");if(dd){if(!s){s=document.createElement("small");b.append(s);}s.textContent=dd;}const idx=report.length;}};
+}
+function timed(url,opts,ms){
+  const t0=performance.now();
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),ms||20000);
+  return fetch(url,Object.assign({signal:ctrl.signal},opts||{})).then(async r=>{
+    const text=await r.text().catch(()=>"");
+    return {ok:r.ok,status:r.status,ms:Math.round(performance.now()-t0),text};
+  }).catch(e=>({ok:false,status:0,ms:Math.round(performance.now()-t0),text:"",err:e.name==="AbortError"?"délai dépassé (20 s)":String(e.message||e)})).finally(()=>clearTimeout(timer));
+}
+function readSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY));}catch(e){return null;}}
+
+async function run(){
+  out.replaceChildren();report=["RAPPORT DIAGNOSTIC GKIMMO — "+new Date().toLocaleString("fr-FR"),"Adresse : "+location.origin];
+  // 1. Appareil
+  let c=section("1. Votre appareil");
+  row(c,"✅","JavaScript fonctionne sur cette page");
+  const cn=navigator.connection;
+  row(c,navigator.onLine?"✅":"❌","Connexion internet : "+(navigator.onLine?"oui":"non"),cn?("Type : "+(cn.effectiveType||"?")+" · débit estimé : "+(cn.downlink||"?")+" Mb/s"):"");
+  row(c,"ℹ️","Navigateur",navigator.userAgent.slice(0,120));
+
+  // 2. Serveur
+  c=section("2. Serveur Supabase");
+  let r=await timed(URL_SB+"/auth/v1/health",{headers:{apikey:KEY}});
+  row(c,r.ok?"✅":"❌","Serveur d’authentification joignable",r.ok?(r.ms+" ms"):("Échec : "+(r.err||("code "+r.status))+" ("+r.ms+" ms)"));
+  r=await timed(URL_SB+"/rest/v1/courses?select=id,title&status=eq.published",{headers:{apikey:KEY}});
+  let n="?";try{n=JSON.parse(r.text).length;}catch(e){}
+  row(c,r.ok?"✅":"❌","Formations publiques lisibles",r.ok?(n+" formation(s) · "+r.ms+" ms"):("Échec : "+(r.err||("code "+r.status+" "+r.text.slice(0,100)))));
+  r=await timed(URL_SB+"/functions/v1/professeur-ia",{method:"POST",headers:{apikey:KEY,Authorization:"Bearer invalide","Content-Type":"application/json"},body:"{}"});
+  const reached=r.status>0;
+  row(c,reached?"✅":"❌","Fonction « professeur-ia » joignable",reached?("Réponse reçue (code "+r.status+") en "+r.ms+" ms · "+r.text.slice(0,90)):("Échec : "+(r.err||"aucune réponse")));
+
+  // 3. Compte
+  c=section("3. Votre compte");
+  const s=readSession();
+  let token=null,uid=null;
+  if(!s||!s.access_token){
+    row(c,"⚠️","Aucune connexion enregistrée sur cette adresse","Connectez-vous d’abord via auth.html, sur la même adresse que cette page.");
+  }else{
+    const left=s.expires_at?Math.round((s.expires_at*1000-Date.now())/60000):null;
+    row(c,"✅","Connexion enregistrée",s.user&&s.user.email?s.user.email:"");
+    row(c,(left!==null&&left<0)?"⚠️":"✅","Jeton de connexion",left===null?"durée inconnue":(left<0?("expiré depuis "+(-left)+" min (il sera renouvelé)"):("valide encore "+left+" min")));
+    token=s.access_token;uid=s.user&&s.user.id;
+    if(left!==null&&left<1&&s.refresh_token){
+      const rr=await timed(URL_SB+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{apikey:KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:s.refresh_token})});
+      if(rr.ok){try{const nw=JSON.parse(rr.text);token=nw.access_token;uid=nw.user&&nw.user.id||uid;localStorage.setItem(SESSION_KEY,JSON.stringify(Object.assign({},s,nw,{expires_at:Math.floor(Date.now()/1000)+(nw.expires_in||3600)})));}catch(e){}}
+      row(c,rr.ok?"✅":"❌","Renouvellement de la connexion",rr.ok?(rr.ms+" ms"):("Échec : "+(rr.err||("code "+rr.status+" · reconnectez-vous"))));
+    }
+    if(token&&uid){
+      const pr=await timed(URL_SB+"/rest/v1/profiles?select=full_name,role&id=eq."+uid,{headers:{apikey:KEY,Authorization:"Bearer "+token}});
+      let p=null;try{p=JSON.parse(pr.text)[0];}catch(e){}
+      row(c,(pr.ok&&p)?"✅":"❌","Profil lu dans la base",(pr.ok&&p)?(p.full_name+" · rôle : "+p.role):("Échec : "+(pr.err||("code "+pr.status+" "+pr.text.slice(0,100)))));
+      const er=await timed(URL_SB+"/rest/v1/enrollments?select=course_id,status&user_id=eq."+uid,{headers:{apikey:KEY,Authorization:"Bearer "+token}});
+      let e=[];try{e=JSON.parse(er.text);}catch(x){}
+      row(c,er.ok?"✅":"❌","Inscriptions de ce compte",er.ok?(e.length+" inscription(s) : "+e.map(x=>x.status).join(", ")):("Échec : "+(er.err||("code "+er.status))));
+    }
+  }
+  window.__token=token;
+
+  // 4. Versions publiées
+  c=section("4. Fichiers mis en ligne sur "+location.host);
+  const checks=[
+    ["dashboard.html",["unpkg.com/@supabase","playServerAudio","tutorVideo"]],
+    ["admin.html",["unpkg.com/@supabase","Candidatures"]],
+    ["formateur.html",["answer_course_question"]],
+    ["videos.html",["callFn"]],
+    ["cours-video.html",["video_script"]],
+    ["candidature-formateur.html",["unpkg.com/@supabase"]],
+    ["auth.html",["newpassword"]],
+    ["index.html",["Nos professeurs intelligents"]],
+    ["modele-hybride.html",["Disponible"]]
+  ];
+  for(const [file,marks] of checks){
+    const fr=await timed(file+"?nocache="+Date.now(),{cache:"no-store"},20000);
+    if(!fr.ok){row(c,"❌",file,fr.status===404?"INTROUVABLE (404) : fichier absent ou mal nommé":("Échec : "+(fr.err||("code "+fr.status))));continue;}
+    const missing=marks.filter(m=>fr.text.indexOf(m)<0);
+    row(c,missing.length?"⚠️":"✅",file,missing.length?"ANCIENNE VERSION (il manque : "+missing.join(", ")+")":("à jour · "+Math.round(fr.text.length/1024)+" Ko"));
+  }
+
+  // 5. CDN
+  c=section("5. Bibliothèque de connexion (chargée depuis internet)");
+  for(const u of ["https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2","https://unpkg.com/@supabase/supabase-js@2"]){
+    const t0=performance.now();
+    const cr=await timed(u,{mode:"no-cors"},25000);
+    row(c,cr.status===0&&cr.err?"❌":"✅",u.split("/")[2],cr.err?("Échec : "+cr.err):(cr.ms+" ms"));
+  }
+  const done=document.createElement("p");done.className="note";done.textContent="Diagnostic terminé. Touchez « Copier le rapport » puis collez-le à Claude. Pour tester la voix du serveur, touchez le bouton ci-dessous.";
+  out.append(done);
+  const vb=document.createElement("button");vb.className="g";vb.textContent="🔊 Tester la voix et OpenAI";vb.type="button";
+  vb.onclick=testVoice;out.append(vb);
+}
+
+async function testVoice(){
+  const c=section("6. Test de la voix (utilise un peu de crédit OpenAI)");
+  const token=window.__token;
+  if(!token){row(c,"❌","Connectez-vous d’abord (auth.html)");return;}
+  const rw=row(c,"⏳","Demande de la voix au serveur…");
+  const r=await timed(URL_SB+"/functions/v1/professeur-ia",{method:"POST",headers:{apikey:KEY,Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({tts_text:"Bonjour, ici votre professeur. Entendez-vous ma voix ?",voice:"onyx"})},45000);
+  let j=null;try{j=JSON.parse(r.text);}catch(e){}
+  if(r.ok&&j&&j.audio){
+    rw.update("✅","La voix du serveur fonctionne ("+r.ms+" ms"+(j.cached?", déjà en réserve":"")+")","Vous devriez l’entendre maintenant.");
+    report.push("✅ Voix du serveur OK");
+    try{const bin=atob(j.audio);const b=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)b[i]=bin.charCodeAt(i);const a=new Audio(URL.createObjectURL(new Blob([b],{type:"audio/mpeg"})));a.play().catch(()=>{});}catch(e){}
+  }else{
+    const msg=(j&&(j.error||j.message))||r.err||r.text.slice(0,150)||("code "+r.status);
+    rw.update("❌","La voix du serveur ne fonctionne pas","Code "+r.status+" : "+msg);
+    report.push("❌ Voix du serveur KO : code "+r.status+" : "+msg);
+  }
+}
+
+document.getElementById("runBtn").addEventListener("click",run);
+document.getElementById("copyBtn").addEventListener("click",async()=>{
+  const text=report.join("\n");
+  try{await navigator.clipboard.writeText(text);alert("Rapport copié. Collez-le dans la conversation.");}
+  catch(e){const t=document.createElement("textarea");t.value=text;t.style.cssText="width:100%;height:240px";out.append(t);t.select();}
+});
+run();
+</script>
+</body>
+</html>
