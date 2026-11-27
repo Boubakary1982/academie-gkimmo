@@ -210,6 +210,27 @@ footer{text-align:center;padding:25px;color:#766d65}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');}
+</script>
+<script>
+if(!window.supabase){
+  (function(){
+    var fail={data:null,error:{message:"Connexion au serveur impossible. Vérifiez votre réseau puis réessayez."}};
+    var wait=function(){return new Promise(function(){});};
+    var chain=function(){var f=function(){return p;};var p=new Proxy(f,{get:function(t,k){return k==="then"?function(res){res(fail);}:p;},apply:function(){return p;}});return p;};
+    window.supabase={createClient:function(){return{auth:{getSession:wait,getUser:wait,onAuthStateChange:function(){return{data:{subscription:{unsubscribe:function(){}}}};},signOut:wait},from:chain,rpc:chain,functions:{invoke:function(){return Promise.resolve(fail);}},storage:{from:chain}};}};
+    document.addEventListener("DOMContentLoaded",function(){
+      var d=document.createElement("div");
+      d.style.cssText="position:sticky;top:0;z-index:99;background:#fce8e6;color:#8b2118;padding:12px 16px;font:14px Arial,sans-serif";
+      d.textContent="Connexion au serveur impossible (réseau lent ou bloqué). ";
+      var b=document.createElement("button");b.textContent="Réessayer";b.style.marginLeft="8px";
+      b.onclick=function(){location.reload();};
+      d.appendChild(b);document.body.insertBefore(d,document.body.firstChild);
+    });
+  })();
+}
+</script>
+<script>
 const SUPABASE_URL="https://uhrmfqsrxnmrdfiwcazm.supabase.co";
 const SUPABASE_KEY="sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
 const $=id=>document.getElementById(id);
@@ -499,291 +520,4 @@ tr.innerHTML=`<td>${esc(user?.full_name||r.user_id)}</td>
 <td>${esc(course?.title||r.course_id)}</td>
 <td>${esc(r.status||"pending")}</td>
 <td>${r.enrolled_at?new Date(r.enrolled_at).toLocaleDateString("fr-FR"):"—"}</td>
-<td><select aria-label="Statut de l'inscription">
-<option value="pending">En attente</option>
-<option value="approved">Approuvée</option>
-<option value="active">Active</option>
-<option value="rejected">Refusée</option>
-</select><button class="gold">Enregistrer</button></td>`;
-const select=tr.querySelector("select");
-select.value=r.status||"pending";
-tr.querySelector("button").addEventListener("click",async()=>{
-const {error}=await db.from("enrollments").update({status:select.value}).eq("id",r.id);
-if(error){message("Modification impossible : "+error.message,"error");return;}
-message("Inscription mise à jour.","success");
-await loadEnrollments();
-await loadStats();
-});
-$("enrollmentsTable").appendChild(tr);
-});
-}
-
-
-async function loadPayments(){
-  tableMessage("paymentsTable",8,"Chargement des paiements...");
-
-  const {data:rows,error}=await db.from("payments")
-    .select("*")
-    .order("created_at",{ascending:false});
-
-  if(error){
-    tableMessage("paymentsTable",8,error.message);
-    return;
-  }
-
-  if(!rows?.length){
-    tableMessage("paymentsTable",8,"Aucun paiement enregistré.");
-    return;
-  }
-
-  const userIds=[...new Set(rows.map(p=>p.user_id).filter(Boolean))];
-  const courseIds=[...new Set(rows.map(p=>p.course_id).filter(Boolean))];
-
-  let users=[];
-  let courseData=[];
-
-  if(userIds.length){
-    const result=await db.from("profiles")
-      .select("id,full_name")
-      .in("id",userIds);
-    users=result.data||[];
-  }
-
-  if(courseIds.length){
-    const result=await db.from("courses")
-      .select("id,title")
-      .in("id",courseIds);
-    courseData=result.data||[];
-  }
-
-  const html=await Promise.all(rows.map(async p=>{
-    const user=users.find(u=>u.id===p.user_id);
-    const course=courseData.find(c=>c.id===p.course_id);
-
-  
-
-        let proof="Aucune preuve";
-    let proofAvailable=false;
-
-    if(p.proof_url){
-      const {data}=await db.storage
-        .from("payment-proofs")
-        .createSignedUrl(p.proof_url,300);
-
-      if(data?.signedUrl){
-        proofAvailable=true;
-        proof=`<a href="${esc(data.signedUrl)}" target="_blank" rel="noopener">Voir le justificatif</a>`;
-      }
-    }
-        const detail=  "Formation : "+money(p.course_amount)+
-      "<br>Inscription : "+money(p.registration_fee_amount);
-
-    const reference=esc(p.transaction_reference||"—");
-
-    const receipt=p.receipt_number
-      ? "<br>Reçu : "+esc(p.receipt_number)
-      : "";
-
-    const needsProof=["Orange Money","Wave"].includes(p.payment_method);
-
-const canValidate=p.status==="pending" &&
-  (!needsProof || (proofAvailable && Boolean(p.transaction_reference)));
-
-const action=canValidate
-  ? `<button class="gold" data-payment="${esc(p.id)}">Valider</button>`
-  : p.status==="pending" && needsProof
-    ? "Justificatif requis"
-    : "—";
-
-    return `<tr>
-      <td>${esc(user?.full_name||p.user_id)}</td>
-      <td>${esc(course?.title||"—")}</td>
-      <td>${detail}</td>
-      <td>${money(p.amount)}</td>
-      <td>${esc(p.payment_method||"—")}</td>
-      <td>${reference}<br>${proof}${receipt}</td>
-      <td>${esc(p.status||"—")}</td>
-      <td>${action}</td>
-    </tr>`;
-  }));
-
-  $("paymentsTable").innerHTML=html.join("");
-
-  $("paymentsTable").querySelectorAll("[data-payment]")
-    .forEach(button=>{
-      button.addEventListener("click",async()=>{
-        const id=button.dataset.payment;
-
-        if(!confirm("Confirmez-vous avoir réellement reçu ce paiement ?")){
-          return;
-        }
-
-        button.disabled=true;
-
-        const {data,error}=await db.rpc(
-          "validate_gkimmo_payment",
-          {p_payment_id:id}
-        );
-
-        if(error){
-          message("Validation impossible : "+error.message,"error");
-          button.disabled=false;
-          return;
-        }
-
-        message("Paiement validé. Reçu : "+data,"success");
-
-        await loadPayments();
-        await loadEnrollments();
-        await loadStats();
-      });
-    });
-}
-
-
-const statusFr={draft:"Brouillon",published:"Publié",unpublished:"Dépublié"};
-
-async function loadApplications(){
-tableMessage("applicationsTable",5,"Chargement des candidatures...");
-const {data,error}=await db.from("instructor_applications").select("*");
-if(error){tableMessage("applicationsTable",5,error.message);return;}
-const rows=(data||[]).sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")));
-if(!rows.length){tableMessage("applicationsTable",5,"Aucune candidature.");return;}
-$("applicationsTable").replaceChildren();
-rows.forEach(a=>{
-const tr=document.createElement("tr");
-const cv=a.cv_url&&/^https?:\/\//i.test(a.cv_url)?`<br><a href="${esc(a.cv_url)}" target="_blank" rel="noopener">Voir le CV</a>`:"";
-tr.innerHTML=`<td>${esc(a.full_name)}<br><span class="small">${esc(a.phone||"")}</span></td>
-<td>${esc(a.specialty||"—")}</td>
-<td class="small">${esc(a.motivation||"")}<br>${esc(a.experience||"")}<br>${esc(a.diploma||"")}${cv}</td>
-<td>${esc(a.status)}</td><td></td>`;
-const cell=tr.lastElementChild;
-if(a.status==="pending"){
-const ok=document.createElement("button");
-ok.className="gold";ok.textContent="Approuver";
-ok.addEventListener("click",()=>approveApplication(a,ok));
-const no=document.createElement("button");
-no.className="danger";no.textContent="Refuser";
-no.addEventListener("click",()=>rejectApplication(a));
-cell.append(ok,no);
-}else{cell.textContent="—";}
-$("applicationsTable").appendChild(tr);
-});
-}
-
-async function approveApplication(a,button){
-if(!confirm("Approuver "+a.full_name+" comme formateur ?"))return;
-button.disabled=true;
-const {data:existing,error:readError}=await db.from("instructors").select("id").eq("user_id",a.user_id).limit(1);
-if(readError){message(readError.message,"error");button.disabled=false;return;}
-if(!existing?.length){
-const {error}=await db.from("instructors").insert({
-user_id:a.user_id,display_name:a.full_name,specialty:a.specialty,
-bio:a.experience||null,instructor_type:"human",status:"approved"
-});
-if(error){message("Création du profil formateur impossible : "+error.message,"error");button.disabled=false;return;}
-}
-const {error:appError}=await db.from("instructor_applications").update({status:"approved"}).eq("id",a.id);
-if(appError){message("Mise à jour impossible : "+appError.message,"error");button.disabled=false;return;}
-await db.from("profiles").update({role:"formateur"}).eq("id",a.user_id);
-message("Formateur approuvé.","success");
-await Promise.all([loadApplications(),loadInstructors(),loadProfiles()]);
-}
-
-async function rejectApplication(a){
-if(!confirm("Refuser la candidature de "+a.full_name+" ?"))return;
-const {error}=await db.from("instructor_applications").update({status:"rejected"}).eq("id",a.id);
-if(error){message("Modification impossible : "+error.message,"error");return;}
-message("Candidature refusée.","success");
-await loadApplications();
-}
-
-async function loadInstructors(){
-const [ins,links,crs]=await Promise.all([
-db.from("instructors").select("*"),
-db.from("instructor_courses").select("*"),
-db.from("courses").select("id,title").order("title")
-]);
-if(ins.error){tableMessage("instructorsTable",3,ins.error.message);return;}
-const list=ins.data||[],assignments=links.data||[],courseList=crs.data||[];
-const kind=i=>i.instructor_type==="ai"?"IA":"Humain";
-$("instructorsTable").innerHTML=list.map(i=>`<tr><td>${esc(i.display_name)}</td><td>${kind(i)}</td><td>${esc(i.status)}</td></tr>`).join("")
-||'<tr><td colspan="3" class="empty">Aucun professeur.</td></tr>';
-$("assignInstructor").innerHTML=list.filter(i=>i.status==="approved")
-.map(i=>`<option value="${esc(i.id)}">${esc(i.display_name)} (${kind(i)})</option>`).join("");
-$("assignCourse").innerHTML=courseList.map(c=>`<option value="${esc(c.id)}">${esc(c.title)}</option>`).join("");
-$("assignmentsTable").replaceChildren();
-if(!assignments.length){tableMessage("assignmentsTable",3,"Aucune affectation.");return;}
-assignments.forEach(l=>{
-const i=list.find(x=>x.id===l.instructor_id);
-const c=courseList.find(x=>x.id===l.course_id);
-const tr=document.createElement("tr");
-tr.innerHTML=`<td>${esc(i?.display_name||l.instructor_id)}</td><td>${esc(c?.title||l.course_id)}</td><td></td>`;
-const b=document.createElement("button");
-b.className="danger";b.textContent="Retirer";
-b.addEventListener("click",async()=>{
-if(!confirm("Retirer cette affectation ?"))return;
-const {error}=await db.from("instructor_courses").delete().eq("id",l.id);
-if(error){message(error.message,"error");return;}
-message("Affectation retirée.","success");
-await loadInstructors();
-});
-tr.lastElementChild.appendChild(b);
-$("assignmentsTable").appendChild(tr);
-});
-}
-
-$("assignBtn").addEventListener("click",async()=>{
-const instructor_id=$("assignInstructor").value;
-const course_id=$("assignCourse").value;
-if(!instructor_id||!course_id){message("Choisissez un professeur et une formation.","error");return;}
-const {data:dup}=await db.from("instructor_courses").select("id")
-.eq("instructor_id",instructor_id).eq("course_id",course_id).limit(1);
-if(dup?.length){message("Cette affectation existe déjà.","error");return;}
-const {error}=await db.from("instructor_courses").insert({instructor_id,course_id});
-if(error){message("Affectation impossible : "+error.message,"error");return;}
-message("Professeur affecté à la formation.","success");
-await loadInstructors();
-});
-
-$("aiForm").addEventListener("submit",async e=>{
-e.preventDefault();
-const {error}=await db.from("instructors").insert({
-display_name:$("aiName").value.trim(),
-specialty:$("aiSpecialty").value.trim(),
-bio:$("aiBio").value.trim()||null,
-instructor_type:"ai",status:"approved"
-});
-if(error){message("Création impossible : "+error.message,"error");return;}
-$("aiForm").reset();
-message("Professeur IA ajouté.","success");
-await loadInstructors();
-});
-
-async function refresh(){
-await Promise.all([
-loadCourses(),loadStats(),loadProfiles(),loadEnrollments(),loadPayments(),loadApplications(),loadInstructors()
-]);
-}
-
-$("logoutBtn").addEventListener("click",async()=>{
-await db.auth.signOut();
-location.replace("auth.html");
-});
-
-async function start(){
-try{
-const ok=await checkAdmin();
-if(!ok)return;
-await refresh();
-message("Administration chargée correctement.","success");
-}catch(error){
-console.error(error);
-message("Erreur de démarrage : "+error.message,"error");
-}
-}
-start();
-</script>
-</body>
-                                          </html>
-  
+<td><select aria-label="Statut de l'inscript
