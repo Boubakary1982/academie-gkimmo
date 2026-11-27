@@ -2,239 +2,210 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>API-GKIMMO | Académie Professionnelle de l'Immobilier</title>
-<meta name="description" content="Formations en immobilier au Mali : professeurs IA, formateurs humains, cours en direct, évaluations et suivi de progression.">
+<meta name="description" content="Formations professionnelles en immobilier au Mali et en Afrique francophone : droit immobilier, gestion, transactions, foncier, investissement, expertise et PropTech.">
+<meta name="theme-color" content="#38231f">
 <style>
+:root{--brown:#38231f;--brown2:#684632;--gold:#d6ad60;--cream:#faf7f0;--ink:#2c241f;--muted:#756b62;--line:#e8dfd2;--white:#fff}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#2b211c;background:#f8f4ec;line-height:1.5}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--cream);color:var(--ink);line-height:1.65}
 a{color:inherit}
-header{background:#3a2219;color:#fff;padding:14px 18px;position:sticky;top:0;z-index:5}
-.brand strong{color:#e0b867;font-size:18px;display:block}
-.brand span{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:bold}
-nav{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:12px}
-nav a{text-decoration:none;color:#fff;padding:3px 0}
-.hero{background:linear-gradient(135deg,#3a2219,#684632);color:#fff;text-align:center;padding:56px 18px}
-.hero small{color:#e0b867;letter-spacing:2px;font-size:11px;font-weight:bold}
-.hero h1{font-size:34px;line-height:1.15;margin:16px auto;max-width:640px}
-.hero p{max-width:560px;margin:0 auto 22px;font-size:14px;color:#f0e6d6}
-.btn{display:inline-block;padding:12px 18px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:13px;margin:5px;border:1px solid #d4a85b}
-.btn.gold{background:#d4a85b;color:#2b211c}
-.btn.line{color:#fff}
-section{padding:44px 18px}
-.wrap{max-width:1000px;margin:0 auto}
-h2{text-align:center;color:#432c23;margin:0 0 6px;font-size:24px}
-.sub{text-align:center;color:#766d65;font-size:14px;margin:0 0 26px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
-.card{background:#fff;border:1px solid #eee5d9;border-radius:10px;padding:18px}
-.card h3{margin:6px 0;font-size:16px;color:#432c23}
-.card p{margin:0;font-size:13px;color:#766d65}
-.alt{background:#eee5d9}
-.pill{display:inline-block;background:#f3ead8;color:#72512c;padding:3px 10px;border-radius:20px;font-size:11px}
-.meta{font-weight:bold;color:#684632;font-size:13px;margin-top:10px}
-.prof{text-align:center}
-.prof .avatar{margin:0 auto 10px}
-.avatar{width:96px;height:96px;border-radius:50%;overflow:hidden;border:3px solid #d8c7a8;background:#efe5d4}
-.avatar svg{width:100%;height:100%;display:block}
-.avatar .eye{transform-box:fill-box;transform-origin:center;animation:blink 4.5s infinite}
-@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
-.small-btn{display:inline-block;margin-top:12px;background:#684632;color:#fff;text-decoration:none;padding:9px 14px;border-radius:6px;font-size:12px}
-.cta{background:#3a2219;color:#fff;text-align:center}
-.cta h2{color:#fff}
-.notice{background:#f3ead8;color:#513529;padding:12px;border-radius:8px;text-align:center;font-size:13px}
-footer{background:#241610;color:#d8c7a8;text-align:center;padding:24px 18px;font-size:12px}
-footer strong{color:#e0b867}
+header{background:var(--brown);color:#fff;padding:14px clamp(16px,4vw,40px);position:sticky;top:0;z-index:10;box-shadow:0 2px 10px #0002}
+.header-inner{max-width:1160px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.brand strong{color:var(--gold);display:block;font-size:19px;letter-spacing:.4px}
+.brand span{font-size:10px;text-transform:uppercase;letter-spacing:1.3px}
+nav{display:flex;flex-wrap:wrap;gap:7px 16px;align-items:center}
+nav a{text-decoration:none;color:white;font-size:13px;padding:5px 0}
+nav a:hover{color:var(--gold)}
+.hero{background:linear-gradient(135deg,var(--brown),var(--brown2));color:#fff;padding:72px 18px 64px;text-align:center}
+.wrap{max-width:1100px;margin:auto}
+.hero small,.eyebrow{color:var(--gold);font-weight:800;letter-spacing:2px;text-transform:uppercase;font-size:11px}
+.hero h1{font-size:clamp(30px,5vw,54px);line-height:1.13;max-width:850px;margin:17px auto}
+.hero p{max-width:760px;margin:0 auto 25px;color:#f3e9dc;font-size:clamp(15px,2vw,18px)}
+.btn{display:inline-block;padding:12px 19px;border-radius:7px;text-decoration:none;font-weight:700;font-size:14px;margin:5px;border:1px solid var(--gold);transition:.2s}
+.btn.gold{background:var(--gold);color:var(--brown)}
+.btn.line{color:#fff;background:transparent}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+section{padding:54px 18px}
+section.alt{background:#eee6da}
+h2{text-align:center;color:#432c23;margin:0 0 8px;font-size:clamp(23px,3vw,32px)}
+.sub{text-align:center;color:var(--muted);margin:0 auto 30px;max-width:760px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.card{background:white;border:1px solid var(--line);border-radius:12px;padding:20px;box-shadow:0 3px 12px #2c241f08}
+.card h3{margin:7px 0 8px;color:#432c23;font-size:18px}
+.card p{margin:0;color:var(--muted);font-size:14px}
+.icon{font-size:26px}
+.pill{display:inline-block;background:#f3ead8;color:#72512c;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.meta{font-weight:700;color:var(--brown2);font-size:13px;margin-top:12px}
+.small-btn{display:inline-block;margin-top:14px;background:var(--brown2);color:white;text-decoration:none;padding:9px 13px;border-radius:6px;font-size:13px;font-weight:700}
+.notice{background:#f3ead8;color:#513529;padding:14px;border-radius:8px;text-align:center;font-size:14px}
+.cta{background:var(--brown);color:white;text-align:center}
+.cta h2{color:white}
+.cta p{color:#f0e6d6}
+footer{background:#241610;color:#d8c7a8;text-align:center;padding:26px 18px;font-size:13px}
+footer strong{color:var(--gold)}
+.two-col{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:20px;align-items:center}
+.feature-list{padding-left:20px;color:var(--muted)}
+.feature-list li{margin:7px 0}
+@media(max-width:600px){header{position:relative}.header-inner{justify-content:center;text-align:center}nav{justify-content:center}.hero{padding:48px 16px}section{padding:40px 16px}.card{padding:17px}}
 </style>
 </head>
 <body id="top">
 <header>
-  <div class="brand"><strong>API-GKIMMO</strong><span>Académie professionnelle de l'immobilier</span></div>
-  <nav>
+<div class="header-inner">
+  <div class="brand"><strong>API-GKIMMO</strong><span>Académie Professionnelle de l'Immobilier</span></div>
+  <nav aria-label="Navigation principale">
     <a href="#top">Accueil</a>
+    <a href="#academie">L'Académie</a>
     <a href="#formations">Formations</a>
     <a href="#professeurs">Professeurs IA</a>
-    <a href="#contact">Contact</a>
-    <a href="modele-hybride.html">Modèle hybride</a>
+    <a href="modele-hybride.html">Modèle pédagogique</a>
     <a href="videos.html">Vidéos</a>
-    <a href="dashboard.html">Espace apprenant</a>
+    <a href="auth.html">Connexion</a>
   </nav>
+</div>
 </header>
 
-<div class="hero">
+<main>
+<section class="hero">
+<div class="wrap">
   <small>FORMER · PROFESSIONNALISER · TRANSFORMER</small>
-  <h1>Le savoir immobilier au service de la professionnalisation.</h1>
-  <p>Développez vos compétences, maîtrisez les métiers de l'immobilier et préparez votre avenir professionnel avec l'Académie GKIMMO.</p>
-  <a class="btn gold" href="#formations">Découvrir nos formations</a>
+  <h1>Développez vos compétences. Construisez votre avenir dans l'immobilier.</h1>
+  <p>Des formations spécialisées et pratiques pour découvrir les métiers de l'immobilier, renforcer votre expertise, développer votre activité ou préparer vos projets d'investissement au Mali et en Afrique francophone.</p>
+  <a class="btn gold" href="#formations">Découvrir les formations</a>
   <a class="btn line" href="auth.html">Créer un compte / Se connecter</a>
 </div>
+</section>
 
-<section>
-  <div class="wrap">
-    <h2>Bienvenue à l'Académie GKIMMO</h2>
-    <p class="sub">Une nouvelle approche de la formation immobilière au Mali et en Afrique francophone.</p>
-    <div class="grid">
-      <div class="card"><h3>🎓 Formation professionnelle</h3><p>Des connaissances pratiques adaptées aux réalités du secteur immobilier.</p></div>
-      <div class="card"><h3>🤖 Professeurs IA qui parlent</h3><p>Posez vos questions par écrit ou à voix haute, et écoutez la réponse de votre professeur.</p></div>
-      <div class="card"><h3>👩🏾‍🏫 Formateurs humains</h3><p>Questions-réponses avec les formateurs et cours en direct en ligne.</p></div>
-      <div class="card"><h3>📚 Apprentissage continu</h3><p>Leçons, évaluations et suivi de votre progression, quand vous voulez.</p></div>
-    </div>
+<section id="academie">
+<div class="wrap">
+  <h2>Bienvenue à l'Académie Professionnelle de l'Immobilier GKIMMO</h2>
+  <p class="sub">Une plateforme de formation conçue pour transmettre des compétences professionnelles et accompagner l'évolution du secteur immobilier.</p>
+  <div class="grid">
+    <article class="card"><div class="icon">🎓</div><h3>Formations spécialisées</h3><p>Des parcours structurés dans les principaux domaines de l'immobilier, adaptés aux enjeux et aux pratiques du marché.</p></article>
+    <article class="card"><div class="icon">🤖</div><h3>Assistants pédagogiques IA</h3><p>Des assistants spécialisés pour poser vos questions, réviser les notions et approfondir les contenus de formation.</p></article>
+    <article class="card"><div class="icon">👩🏾‍🏫</div><h3>Accompagnement humain</h3><p>Selon les parcours, échanges avec les formateurs, accompagnement pédagogique et activités pratiques.</p></article>
+    <article class="card"><div class="icon">📚</div><h3>Progression suivie</h3><p>Accédez à vos cours, avancez à votre rythme et suivez votre progression depuis votre espace apprenant.</p></article>
   </div>
+</div>
 </section>
 
 <section class="alt" id="formations">
-  <div class="wrap">
-    <h2>Nos formations</h2>
-    <p class="sub">Construisez votre expertise dans les métiers de l'immobilier.</p>
-    <div class="grid" id="courses"><div class="notice">Chargement des formations...</div></div>
-  </div>
+<div class="wrap">
+  <h2>Nos domaines de formation</h2>
+  <p class="sub">Explorez nos parcours et choisissez la formation correspondant à vos objectifs professionnels.</p>
+  <div class="grid" id="courses"><div class="notice">Chargement du catalogue de formations…</div></div>
+</div>
 </section>
 
 <section id="professeurs">
-  <div class="wrap">
-    <h2>Nos professeurs intelligents</h2>
-    <p class="sub">Un professeur IA spécialisé pour chaque formation, disponible à tout moment.</p>
-    <div class="grid" id="profs"><div class="notice">Chargement des professeurs...</div></div>
+<div class="wrap">
+  <h2>Vos assistants pédagogiques intelligents</h2>
+  <p class="sub">Des assistants IA spécialisés pour vous aider à comprendre les notions, réviser et approfondir les sujets étudiés.</p>
+  <div class="grid" id="profs"><div class="notice">Chargement des professeurs…</div></div>
+</div>
+</section>
+
+<section class="alt" id="pedagogie">
+<div class="wrap">
+  <h2>Une pédagogie hybride et progressive</h2>
+  <p class="sub">L'Académie combine plusieurs modalités d'apprentissage pour proposer une expérience de formation complète.</p>
+  <div class="two-col">
+    <div class="card">
+      <h3>Apprendre et progresser</h3>
+      <ul class="feature-list">
+        <li>Leçons accessibles en ligne depuis votre espace apprenant ;</li>
+        <li>exercices et évaluations pour consolider les acquis ;</li>
+        <li>assistants pédagogiques IA pour poser vos questions ;</li>
+        <li>accompagnement par des formateurs selon les modalités du parcours ;</li>
+        <li>suivi de progression et consultation des résultats.</li>
+      </ul>
+      <a class="small-btn" href="modele-hybride.html">Découvrir notre modèle pédagogique</a>
+    </div>
+    <div class="card">
+      <h3>À qui s'adresse l'Académie ?</h3>
+      <ul class="feature-list">
+        <li>Personnes souhaitant découvrir les métiers immobiliers ;</li>
+        <li>agents et administrateurs de biens ;</li>
+        <li>entrepreneurs et porteurs de projets ;</li>
+        <li>investisseurs et propriétaires ;</li>
+        <li>professionnels du foncier ;</li>
+        <li>étudiants, jeunes professionnels et diaspora intéressée par l'immobilier au Mali.</li>
+      </ul>
+    </div>
   </div>
+</div>
 </section>
 
 <section class="cta" id="contact">
-  <div class="wrap">
-    <h2>Votre avenir dans l'immobilier commence ici.</h2>
-    <p class="sub" style="color:#f0e6d6">Rejoignez une nouvelle dynamique de formation et de professionnalisation.</p>
-    <a class="btn gold" href="auth.html">Créer mon compte</a>
-    <a class="btn line" href="https://wa.me/22376139298" target="_blank" rel="noopener">Nous contacter sur WhatsApp</a>
-    <p style="font-size:13px;margin-top:16px">Téléphone / WhatsApp : +223 76 13 92 98 · boutambour1982@gmail.com</p>
-  </div>
+<div class="wrap">
+  <h2>Faites le premier pas vers votre avenir dans l'immobilier.</h2>
+  <p>Développez vos compétences et rejoignez une dynamique de professionnalisation du secteur immobilier.</p>
+  <a class="btn gold" href="auth.html">Rejoindre l'Académie</a>
+  <a class="btn line" href="https://wa.me/22376139298" target="_blank" rel="noopener noreferrer">Nous contacter sur WhatsApp</a>
+  <p style="font-size:13px;margin-top:16px">Téléphone / WhatsApp : +223 76 13 92 98<br>Email : boutambour1982@gmail.com</p>
+</div>
 </section>
+</main>
 
 <footer>
-  <strong>API-GKIMMO</strong><br>
-  Académie Professionnelle de l'Immobilier<br>
-  Une initiative du Groupe Kadia Keita Immo &amp; Presta Services SARL.<br>
-  © 2026 — Tous droits réservés.
+<strong>API-GKIMMO</strong><br>
+Académie Professionnelle de l'Immobilier<br>
+Une initiative du Groupe Kadia Keita Immo &amp; Presta Services SARL.<br>
+© 2026 — Tous droits réservés.
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');}
-</script>
-<script>
-if(!window.supabase){
-  (function(){
-    var fail={data:null,error:{message:"Connexion au serveur impossible. Vérifiez votre réseau puis réessayez."}};
-    var wait=function(){return new Promise(function(){});};
-    var chain=function(){var f=function(){return p;};var p=new Proxy(f,{get:function(t,k){return k==="then"?function(res){res(fail);}:p;},apply:function(){return p;}});return p;};
-    window.supabase={createClient:function(){return{auth:{getSession:wait,getUser:wait,onAuthStateChange:function(){return{data:{subscription:{unsubscribe:function(){}}}};},signOut:wait},from:chain,rpc:chain,functions:{invoke:function(){return Promise.resolve(fail);}},storage:{from:chain}};}};
-    document.addEventListener("DOMContentLoaded",function(){
-      var d=document.createElement("div");
-      d.style.cssText="position:sticky;top:0;z-index:99;background:#fce8e6;color:#8b2118;padding:12px 16px;font:14px Arial,sans-serif";
-      d.textContent="Connexion au serveur impossible (réseau lent ou bloqué). ";
-      var b=document.createElement("button");b.textContent="Réessayer";b.style.marginLeft="8px";
-      b.onclick=function(){location.reload();};
-      d.appendChild(b);document.body.insertBefore(d,document.body.firstChild);
-    });
-  })();
-}
-</script>
 <script>
 const SUPABASE_URL="https://uhrmfqsrxnmrdfiwcazm.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
 const sb=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
 const $=id=>document.getElementById(id);
-function el(tag,text,cls){const e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e;}
 const money=n=>Number(n||0).toLocaleString("fr-FR")+" FCFA";
-
-const TUTOR_LOOKS={
-  juriste:{skin:"#8d5a3b",hair:"#1a1410",style:"short",glasses:true,outfit:"#25324f",accent:"#8b2332",bg:"#e8dfcf",g:"m",pitch:.9,rate:.95},
-  foncier:{skin:"#6b4226",hair:"#d9d9d9",style:"short",beard:true,outfit:"#a8742a",accent:"#f2d6a2",bg:"#efe4cf",g:"m",pitch:.8,rate:.9},
-  gestion:{skin:"#a0674a",hair:"#16110e",style:"afro",outfit:"#3f6b4b",accent:"#e8c872",bg:"#e6efe3",g:"f",pitch:1.1,rate:1,lip:"#7a2a3a"},
-  transaction:{skin:"#c68b59",hair:"#2a1b12",style:"bun",outfit:"#e9e6df",accent:"#c79a2e",bg:"#efe8d6",g:"f",pitch:1.1,rate:1.05,lip:"#7a2a3a"},
-  expert:{skin:"#7a4a30",hair:"#1a1410",style:"short",glasses:true,outfit:"#5a5f66",accent:"#f0f0f0",bg:"#f1e2d0",g:"m",pitch:.95,rate:.95},
-  invest:{skin:"#5b3a24",hair:"#0f0c0a",style:"short",beard:true,outfit:"#1e1e22",accent:"#d4a52a",bg:"#e4e0d6",g:"m",pitch:.85,rate:1},
-  digital:{skin:"#b97a56",hair:"#2a1a14",style:"short",outfit:"#1f7f84",accent:"#ffffff",bg:"#e2f0ee",g:"m",pitch:1.05,rate:1.1},
-  business:{skin:"#946141",hair:"#120d0a",style:"wrap",wrap:"#6b2535",outfit:"#3b2a4f",accent:"#e9d8a6",bg:"#efe2e4",g:"f",pitch:1.1,rate:1.05,lip:"#7a2a3a"}
-};
-function tutorKey(name){
-  const n=(name||"").toLowerCase();
-  const map=[["foncier","foncier"],["gestion","gestion"],["transaction","transaction"],["expert","expert"],["invest","invest"],["proptech","digital"],["digital","digital"],["entrepreneur","business"],["business","business"]];
-  for(const [word,key] of map){if(n.includes(word))return key;}
-  return "juriste";
-}
-function avatarSVG(k){
-  const L=TUTOR_LOOKS[k]||TUTOR_LOOKS.juriste;
-  const hairBack=L.style==="afro"?`<circle cx="100" cy="72" r="50" fill="${L.hair}"/>`:"";
-  let hairTop="";
-  if(L.style==="short"||L.style==="bun")hairTop=`<path d="M62 80 Q60 40 100 40 Q140 40 138 80 Q124 58 100 58 Q76 58 62 80Z" fill="${L.hair}"/>`;
-  if(L.style==="bun")hairTop+=`<circle cx="100" cy="34" r="13" fill="${L.hair}"/>`;
-  if(L.style==="wrap")hairTop=`<path d="M58 80 Q56 34 100 34 Q144 34 142 80 Q124 56 100 56 Q76 56 58 80Z" fill="${L.wrap}"/><circle cx="132" cy="40" r="12" fill="${L.wrap}"/>`;
-  if(L.style==="afro")hairTop=`<path d="M64 80 Q66 52 100 52 Q134 52 136 80 Q120 64 100 64 Q80 64 64 80Z" fill="${L.hair}"/>`;
-  const beard=L.beard?`<path d="M64 92 Q66 132 100 134 Q134 132 136 92 Q128 114 100 116 Q72 114 64 92Z" fill="${L.hair}"/>`:"";
-  const glasses=L.glasses?`<g fill="none" stroke="#1d1d1d" stroke-width="2.5"><circle cx="84" cy="88" r="11"/><circle cx="116" cy="88" r="11"/><path d="M95 88h10"/></g>`:"";
-  return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Professeur IA">
-<rect width="200" height="200" fill="${L.bg}"/>${hairBack}
-<rect x="88" y="118" width="24" height="24" fill="${L.skin}"/>
-<path d="M26 200 Q30 144 80 132 L120 132 Q170 144 174 200Z" fill="${L.outfit}"/>
-<path d="M84 132 L100 154 L116 132Z" fill="${L.skin}"/>
-<path d="M100 150 L93 160 L100 196 L107 160Z" fill="${L.accent}"/>
-<ellipse cx="100" cy="90" rx="38" ry="44" fill="${L.skin}"/>${hairTop}${beard}
-<ellipse class="eye" cx="84" cy="88" rx="4" ry="4.5" fill="#1b1b1b"/><ellipse class="eye" cx="116" cy="88" rx="4" ry="4.5" fill="#1b1b1b"/>
-<path d="M76 77 Q84 72 92 77M108 77 Q116 72 124 77" stroke="#1b1b1b" stroke-width="2.5" fill="none" stroke-linecap="round"/>${glasses}
-<path d="M100 92 L96 106 Q100 108 104 106Z" fill="#00000022"/>
-<ellipse class="mouth" cx="100" cy="116" rx="10" ry="2.6" fill="${L.lip||"#4a1a1a"}"/></svg>`;
-}
-
-
+function el(tag,text,cls){const e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e;}
 async function loadCourses(){
-  const box=$("courses");
-  if(!sb){box.replaceChildren(el("div","Catalogue indisponible. Connectez-vous pour voir les formations.","notice"));return;}
-  const {data,error}=await sb.from("courses")
-    .select("id,title,description,category,price,duration_hours")
-    .eq("status","published").order("title");
-  box.replaceChildren();
-  if(error||!data?.length){box.append(el("div","Les formations seront bientôt affichées ici.","notice"));return;}
-  data.forEach(c=>{
-    const card=el("div",null,"card");
-    if(c.category)card.append(el("span",c.category,"pill"));
-    card.append(el("h3",c.title));
-    if(c.description)card.append(el("p",c.description));
-    card.append(el("div",money(c.price)+(c.duration_hours?" · "+c.duration_hours+" h":""),"meta"));
-    const a=el("a","S'inscrire","small-btn");a.href="auth.html";
-    card.append(a);
-    box.append(card);
-  });
+ const box=$("courses");
+ if(!sb){box.replaceChildren(el("div","Le catalogue est momentanément indisponible. Réessayez plus tard.","notice"));return;}
+ const {data,error}=await sb.from("courses").select("id,title,description,category,price,duration_hours").eq("status","published").order("title");
+ box.replaceChildren();
+ if(error||!data?.length){box.append(el("div","Les formations seront bientôt présentées ici. Consultez régulièrement le catalogue.","notice"));return;}
+ data.forEach(c=>{
+  const card=el("article",null,"card");
+  if(c.category)card.append(el("span",c.category,"pill"));
+  card.append(el("h3",c.title||"Formation immobilière"));
+  card.append(el("p",c.description||"Présentation détaillée de cette formation prochainement."));
+  card.append(el("div",money(c.price)+(c.duration_hours?" · "+c.duration_hours+" heures":""),"meta"));
+  const a=el("a","Voir / s'inscrire","small-btn");a.href="auth.html";
+  card.append(a);box.append(card);
+ });
 }
-
 async function loadProfs(){
-  const box=$("profs");
-  if(!sb){box.replaceChildren(el("div","Connectez-vous pour rencontrer vos professeurs.","notice"));return;}
-  const [ins,links,crs]=await Promise.all([
-    sb.from("instructors").select("id,display_name,specialty").eq("instructor_type","ai").eq("status","approved"),
-    sb.from("instructor_courses").select("instructor_id,course_id"),
-    sb.from("courses").select("id,title").eq("status","published")
-  ]);
-  box.replaceChildren();
-  const list=(ins.data||[]).map(i=>{
-    const link=(links.data||[]).find(l=>l.instructor_id===i.id);
-    const course=link?(crs.data||[]).find(c=>String(c.id)===String(link.course_id)):null;
-    return {...i,course:course?.title};
-  }).filter(i=>i.course).sort((a,b)=>a.display_name.localeCompare(b.display_name,"fr"));
-  if(!list.length){box.append(el("div","Les professeurs IA arrivent bientôt.","notice"));return;}
-  list.forEach(p=>{
-    const card=el("div",null,"card prof");
-    const av=el("div",null,"avatar");
-    av.innerHTML=avatarSVG(tutorKey(p.display_name));
-    card.append(av,el("h3",p.display_name));
-    if(p.specialty)card.append(el("p",p.specialty));
-    card.append(el("div",p.course,"meta"));
-    const a=el("a","Poser une question","small-btn");a.href="auth.html";
-    card.append(a);
-    box.append(card);
-  });
+ const box=$("profs");
+ if(!sb){box.replaceChildren(el("div","Les assistants pédagogiques sont momentanément indisponibles.","notice"));return;}
+ const [ins,links,crs]=await Promise.all([
+  sb.from("instructors").select("id,display_name,specialty").eq("instructor_type","ai").eq("status","approved"),
+  sb.from("instructor_courses").select("instructor_id,course_id"),
+  sb.from("courses").select("id,title").eq("status","published")
+ ]);
+ box.replaceChildren();
+ const list=(ins.data||[]).map(i=>{
+  const link=(links.data||[]).find(l=>l.instructor_id===i.id);
+  const course=link?(crs.data||[]).find(c=>String(c.id)===String(link.course_id)):null;
+  return {...i,course:course?.title};
+ }).filter(i=>i.course).sort((a,b)=>(a.display_name||"").localeCompare(b.display_name||"","fr"));
+ if(!list.length){box.append(el("div","Les professeurs IA spécialisés seront affichés ici dès leur activation.","notice"));return;}
+ list.forEach(p=>{
+  const card=el("article",null,"card");
+  card.append(el("div","🤖","icon"),el("h3",p.display_name||"Professeur IA"));
+  if(p.specialty)card.append(el("p",p.specialty));
+  card.append(el("div",p.course,"meta"));
+  const a=el("a","Accéder à l'assistant","small-btn");a.href="auth.html";card.append(a);
+  box.append(card);
+ });
 }
-
-loadCourses();
-loadProfs();
+loadCourses();loadProfs();
 </script>
 </body>
 </html>
