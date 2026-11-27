@@ -79,7 +79,6 @@ h2{font-size:16px;margin:8px 4px}
   <p class="note">Vidéo pédagogique préparée par votre professeur IA à partir du contenu du cours. Elle ne remplace pas un conseil juridique, financier ou professionnel : vérifiez toujours les textes officiels du Mali. La première ouverture d’une leçon peut prendre environ une minute.</p>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const TUTOR_LOOKS={
   juriste:{skin:"#8d5a3b",hair:"#1a1410",style:"short",glasses:true,outfit:"#25324f",accent:"#8b2332",bg:"#e8dfcf",g:"m",pitch:.9,rate:.95},
@@ -124,8 +123,34 @@ function avatarSVG(k){
 const SERVER_VOICES={juriste:"onyx",foncier:"echo",gestion:"nova",transaction:"shimmer",expert:"fable",invest:"onyx",digital:"echo",business:"nova"};
 
 const $=id=>document.getElementById(id);
-const sb=window.supabase?window.supabase.createClient("https://uhrmfqsrxnmrdfiwcazm.supabase.co","sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A"):null;
-let L={key:"juriste",voice:"onyx",name:"Professeur IA",sub:""},scenes=[{t:"Préparation de la vidéo",b:["Le professeur prépare la leçon"],say:""}],idx=0,token=0,playing=false,finished=false,loggedIn=false,currentStop=null,silent=!("speechSynthesis" in window);
+const SUPABASE_URL="https://uhrmfqsrxnmrdfiwcazm.supabase.co";
+const SUPABASE_KEY="sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
+const SESSION_KEY="sb-uhrmfqsrxnmrdfiwcazm-auth-token";
+function readSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY));}catch(e){return null;}}
+async function getAccessToken(){
+  const s=readSession();
+  if(!s||!s.access_token)return null;
+  if(s.expires_at&&s.expires_at*1000>Date.now()+60000)return s.access_token;
+  if(!s.refresh_token)return null;
+  try{
+    const r=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:s.refresh_token})});
+    if(!r.ok)return null;
+    const n=await r.json();
+    localStorage.setItem(SESSION_KEY,JSON.stringify(Object.assign({},s,n,{expires_at:Math.floor(Date.now()/1000)+(n.expires_in||3600)})));
+    return n.access_token;
+  }catch(e){return null;}
+}
+async function callFn(body){
+  const token=await getAccessToken();
+  if(!token)return {error:{message:"Connexion requise. Connectez-vous puis réessayez."}};
+  try{
+    const r=await fetch(SUPABASE_URL+"/functions/v1/professeur-ia",{method:"POST",headers:{Authorization:"Bearer "+token,apikey:SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify(body)});
+    let data=null;try{data=await r.json();}catch(e){}
+    if(!r.ok)return {error:{message:(data&&(data.error||data.message))||("Erreur "+r.status)}};
+    return {data};
+  }catch(e){return {error:{message:"Connexion au serveur impossible. Vérifiez votre réseau."}};}
+}
+let L={key:"juriste",voice:"onyx",name:"Professeur IA",sub:""},scenes=[{t:"Préparation de la vidéo",b:["Le professeur prépare la leçon"],say:""}],idx=0,token=0,playing=false,finished=false,loggedIn=!!(readSession()&&readSession().access_token),currentStop=null,silent=!("speechSynthesis" in window);
 const audioCache={};
 
 function setSpeaking(on){$("avatar").classList.toggle("speaking",on);}
@@ -145,9 +170,9 @@ function toUrl(b64){
   return URL.createObjectURL(new Blob([bytes],{type:"audio/mpeg"}));
 }
 function fetchVoice(text,key){
-  if(!sb||!loggedIn)return Promise.resolve(null);
+  if(!loggedIn)return Promise.resolve(null);
   if(!audioCache[key]){
-    audioCache[key]=sb.functions.invoke("professeur-ia",{body:{tts_text:text,voice:L.voice}})
+    audioCache[key]=callFn({tts_text:text,voice:L.voice})
       .then(({data,error})=>(error||!data?.audio)?null:toUrl(data.audio)).catch(()=>null);
   }
   return audioCache[key];
@@ -279,19 +304,15 @@ async function init(){
   $("avatar").innerHTML=avatarSVG("juriste");
   $("pName").textContent="Professeur IA";
   $("mainBtn").hidden=true;$("testBtn").hidden=true;
-  if(!sb){$("sub").textContent="Service indisponible.";return;}
-  const {data}=await sb.auth.getSession();
-  if(!data?.session){location.replace("auth.html");return;}
-  loggedIn=true;
+  if(!loggedIn){location.replace("auth.html");return;}
   const body={video_script:true,course_id:qs.get("c"),lesson_id:qs.get("l"),instructor_id:qs.get("i")};
   if(!body.course_id||!body.lesson_id||!body.instructor_id){
     $("sub").textContent="Lien incomplet : ouvrez la vidéo depuis une leçon de votre espace apprenant.";
     return;
   }
   $("sub").textContent="Le professeur prépare la vidéo… la première fois, cela peut prendre environ une minute.";
-  const {data:res,error}=await sb.functions.invoke("professeur-ia",{body});
-  let msg=error?(error.message||"Erreur inconnue"):(res?.error||"");
-  if(error){try{const b=await error.context.json();if(b?.error)msg=b.error;}catch(e){}}
+  const {data:res,error}=await callFn(body);
+  const msg=error?(error.message||"Erreur inconnue"):(res?.error||"");
   if(msg||!res?.scenes?.length){$("sub").textContent="Erreur : "+(msg||"vidéo indisponible");return;}
   const key=tutorKey(res.instructor);
   L={key,voice:SERVER_VOICES[key]||"onyx",name:res.instructor,sub:res.lesson};
