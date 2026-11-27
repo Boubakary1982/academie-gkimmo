@@ -185,7 +185,7 @@ if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/su
 if(!window.supabase){
   (function(){
     var fail={data:null,error:{message:"Connexion au serveur impossible. Vérifiez votre réseau puis réessayez."}};
-    var wait=function(){return new Promise(function(){});};
+    var wait=function(){return Promise.resolve(fail);};
     var chain=function(){var f=function(){return p;};var p=new Proxy(f,{get:function(t,k){return k==="then"?function(res){res(fail);}:p;},apply:function(){return p;}});return p;};
     window.supabase={createClient:function(){return{auth:{getSession:wait,getUser:wait,onAuthStateChange:function(){return{data:{subscription:{unsubscribe:function(){}}}};},signOut:wait},from:chain,rpc:chain,functions:{invoke:function(){return Promise.resolve(fail);}},storage:{from:chain}};}};
     document.addEventListener("DOMContentLoaded",function(){
@@ -561,4 +561,206 @@ async function loadPendingPayments(){
 
       const button=document.createElement("button");
       button.className="primary";
-  
+
+      button.textContent=payment.proof_url?"Renvoyer un justificatif":"Transmettre référence et justificatif";
+      button.addEventListener("click",()=>submitPaymentProof(payment.id,button));
+      card.append(status,button);
+    }
+    list.appendChild(card);
+  });
+  section.hidden=false;
+}
+
+async function submitPaymentProof(paymentId,button){
+  const reference=prompt("Référence de la transaction (ou laissez vide si paiement non encore effectué) :");
+  if(reference===null)return;
+  const input=document.createElement("input");
+  input.type="file";input.accept="image/jpeg,image/png,application/pdf";
+  const file=await new Promise(resolve=>{input.onchange=()=>resolve(input.files?.[0]||null);input.click();});
+  if(!file){alert("Aucun fichier sélectionné.");return;}
+  if(file.size>5*1024*1024){alert("Le fichier dépasse 5 Mo.");return;}
+  const ext=(file.name.split(".").pop()||"").toLowerCase();
+  if(!["jpg","jpeg","png","pdf"].includes(ext)){alert("Format accepté : JPG, PNG ou PDF.");return;}
+  button.disabled=true;
+  try{
+    const path=currentUser.id+"/"+paymentId+"_"+Date.now()+"."+ext;
+    const {error:uploadError}=await sb.storage.from("payment-proofs").upload(path,file,{upsert:false});
+    if(uploadError)throw uploadError;
+    const {error}=await sb.rpc("submit_payment_proof",{p_payment_id:paymentId,p_transaction_reference:reference.trim()||null,p_proof_url:path});
+    if(error)throw error;
+    alert("Justificatif transmis. Votre paiement attend la vérification de GKIMMO.");
+    await loadPendingPayments();
+  }catch(e){alert("Transmission impossible : "+(e.message||e));}
+  finally{button.disabled=false;}
+}
+
+function setVisibleSections({courses=false,detail=false,reader=false}={}){
+  document.getElementById("myCoursesSection").hidden=!courses;
+  document.getElementById("courseDetail").hidden=!detail;
+  document.getElementById("lessonReader").hidden=!reader;
+}
+
+async function openCourse(course){
+  currentCourse=course;currentLesson=null;
+  document.getElementById("detailTitle").textContent=course.title||"Formation";
+  document.getElementById("detailDescription").textContent=course.description||"";
+  setVisibleSections({detail:true});
+  showMessage("modulesMessage","Chargement des modules...");
+  document.getElementById("modulesList").replaceChildren();
+  await loadModules(course.id);
+  await loadCourseExtras(course.id);
+}
+
+async function loadModules(courseId){
+  const container=document.getElementById("modulesList");container.replaceChildren();
+  let result=await sb.from("course_modules").select("*").eq("course_id",courseId).order("order_index");
+  if(result.error){result=await sb.from("course_modules").select("*").eq("course_id",courseId);}
+  if(result.error){showMessage("modulesMessage","Impossible de charger les modules : "+result.error.message,"error");return;}
+  const modules=result.data||[];
+  if(!modules.length){showMessage("modulesMessage","Aucun module disponible pour cette formation.");return;}
+  document.getElementById("modulesMessage").hidden=true;
+  currentTotal=0;currentCompleted=0;
+  for(const mod of modules){
+    const section=document.createElement("section");section.className="card";
+    const h=document.createElement("h3");h.textContent=mod.title||mod.name||"Module";
+    const desc=document.createElement("p");desc.textContent=mod.description||"";
+    section.append(h,desc);
+    const lessonList=document.createElement("div");section.appendChild(lessonList);
+    container.appendChild(section);
+    await loadLessons(mod,lessonList);
+  }
+  updateProgress();
+}
+
+async function loadLessons(module,container){
+  let query=sb.from("lessons").select("*").eq("module_id",module.id).order("order_index");
+  let {data,error}=await query;
+  if(error){({data,error}=await sb.from("lessons").select("*").eq("module_id",module.id));}
+  if(error){const note=document.createElement("p");note.textContent="Leçons indisponibles : "+error.message;container.appendChild(note);return;}
+  (data||[]).forEach(lesson=>{
+    currentTotal++;
+    const row=document.createElement("div");row.className="lesson-row";
+    const check=document.createElement("input");check.type="checkbox";check.setAttribute("aria-label","Leçon terminée");
+    const open=document.createElement("button");open.className="lesson-open";open.type="button";open.textContent=lesson.title||lesson.name||"Leçon";
+    const status=document.createElement("span");status.className="pill";status.textContent="À étudier";
+    check.addEventListener("change",()=>{status.textContent=check.checked?"Terminée":"À étudier";currentCompleted=container.parentElement.parentElement.querySelectorAll('input[type="checkbox"]:checked').length;updateProgress();});
+    open.addEventListener("click",()=>openLesson(lesson,module));
+    row.append(check,open,status);container.appendChild(row);
+  });
+}
+function updateProgress(){
+  const pct=currentTotal?Math.round(currentCompleted/currentTotal*100):0;
+  document.getElementById("progressLabel").textContent="Progression : "+pct+"%";
+  document.getElementById("progressFill").style.width=pct+"%";
+  document.getElementById("progressCount").textContent=currentCompleted+" leçon(s) terminée(s) sur "+currentTotal;
+}
+function openLesson(lesson,module){
+  currentLesson=lesson;
+  document.getElementById("readerTitle").textContent=lesson.title||lesson.name||"Leçon";
+  const content=lesson.content||lesson.lesson_content||lesson.description||"Contenu de cette leçon à venir.";
+  document.getElementById("readerContent").textContent=content;
+  document.getElementById("readerVideo").replaceChildren();
+  const videoUrl=lesson.video_url||lesson.video||lesson.video_link;
+  if(videoUrl){const link=document.createElement("a");link.href=videoUrl;link.target="_blank";link.rel="noopener";link.textContent="Ouvrir la vidéo de la leçon";document.getElementById("readerVideo").appendChild(link);}
+  document.getElementById("readerDocument").replaceChildren();
+  const docUrl=lesson.document_url||lesson.document_link||lesson.pdf_url;
+  if(docUrl){const link=document.createElement("a");link.href=docUrl;link.target="_blank";link.rel="noopener";link.textContent="Consulter le document / PDF";document.getElementById("readerDocument").appendChild(link);}
+  setVisibleSections({reader:true});
+  const tutor=document.getElementById("malikTutor");tutor.hidden=false;
+  malikHistory=[];document.getElementById("malikMessages").textContent="Bonjour ! Je suis le professeur Malik. Posez-moi une question sur cette leçon.";
+  document.getElementById("tutorVideo").href=videoUrl||"#";
+}
+function returnToModules(){setVisibleSections({detail:true});}
+function escapeHtml(text){return String(text||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+
+async function loadCourseExtras(courseId){
+  // Les espaces supplémentaires sont optionnels : leurs tables peuvent ne pas être installées.
+  const live=document.getElementById("liveList");live.textContent="Les séances en direct seront affichées ici lorsqu'elles seront configurées.";
+  document.getElementById("hqList").replaceChildren();
+  document.getElementById("evaluationListMessage").textContent="Les évaluations seront affichées ici lorsqu'elles seront configurées.";
+  document.getElementById("evaluationList").replaceChildren();
+}
+
+async function sendHumanQuestion(){
+  const text=document.getElementById("hqText").value.trim();
+  if(!text){showMessage("hqStatus","Veuillez écrire votre question.");return;}
+  // En l'absence de schéma de table confirmé, ne pas envoyer vers une table inventée.
+  showMessage("hqStatus","Votre question est prête. L'envoi automatique sera activé dès que la table de questions formateurs sera configurée.");
+}
+
+function renderTutorAvatar(){
+  document.getElementById("tutorAvatar").innerHTML='<svg viewBox="0 0 120 120" role="img" aria-label="Avatar professeur Malik"><circle cx="60" cy="60" r="58" fill="#ead9bc"/><path d="M25 105 Q30 75 60 75 Q90 75 95 105" fill="#684632"/><ellipse cx="60" cy="51" rx="29" ry="34" fill="#8c5b3b"/><path d="M30 45 Q30 10 60 18 Q91 14 90 45 Q77 30 60 32 Q43 32 30 45" fill="#29251f"/><ellipse class="eye" cx="48" cy="51" rx="4" ry="5" fill="#211b17"/><ellipse class="eye" cx="72" cy="51" rx="4" ry="5" fill="#211b17"/><path class="mouth" d="M48 66 Q60 72 72 66" fill="none" stroke="#321e17" stroke-width="3" stroke-linecap="round"/></svg>';
+}
+function tutorSpeak(text){
+  if(!("speechSynthesis" in window)){showMessage("malikStatus","La synthèse vocale n'est pas disponible sur ce navigateur.");return;}
+  speechSynthesis.cancel();
+  const utterance=new SpeechSynthesisUtterance(text);utterance.lang="fr-FR";
+  utterance.onstart=()=>document.getElementById("tutorAvatar").classList.add("speaking");
+  utterance.onend=utterance.onerror=()=>document.getElementById("tutorAvatar").classList.remove("speaking");
+  speechSynthesis.speak(utterance);
+}
+function tutorExplain(){
+  const lesson=currentLesson;
+  if(!lesson){showMessage("malikStatus","Ouvrez d'abord une leçon.");return;}
+  const text=(lesson.content||lesson.lesson_content||lesson.description||"Cette leçon ne contient pas encore de texte.").slice(0,4000);
+  const answer="Voici l'explication de la leçon :\n\n"+text+"\n\nRetenez les idées principales, puis essayez de les appliquer à un cas concret dans l'immobilier.";
+  document.getElementById("malikMessages").textContent=answer;tutorSpeak(answer);
+}
+function tutorAnswer(question){
+  const q=question.trim();if(!q)return;
+  const base=currentLesson?(currentLesson.content||currentLesson.lesson_content||currentLesson.description||""):"";
+  let answer="Je suis le professeur Malik. Je peux vous aider à étudier la leçon, mais je ne suis pas connecté à un service d'intelligence artificielle externe dans cette version.\n\n";
+  if(base){answer+="Voici le contenu de la leçon pour vous guider :\n\n"+base.slice(0,2500)+"\n\n";}
+  answer+="Votre question : "+q+"\n\nReformulez la notion en vos propres mots et donnez un exemple pratique dans le secteur immobilier. Cette méthode vous aidera à mieux la maîtriser.";
+  document.getElementById("malikMessages").textContent=answer;malikHistory.push({question:q,answer});tutorSpeak(answer);
+}
+function startMic(){
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SpeechRecognition){showMessage("malikStatus","La reconnaissance vocale n'est pas prise en charge. Utilisez le clavier.");return;}
+  const recognition=new SpeechRecognition();recognition.lang="fr-FR";recognition.interimResults=false;
+  recognition.onresult=e=>{document.getElementById("malikQuestion").value=e.results[0][0].transcript;};
+  recognition.onerror=e=>showMessage("malikStatus","Micro : "+e.error);
+  recognition.start();
+}
+function withTimeout(promise,label,ms=12000){
+  return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+" : délai dépassé ("+Math.round(ms/1000)+" s). Vérifiez la connexion Supabase et le chargement de la bibliothèque.")),ms))]);
+}
+async function initializeDashboard(){
+  try{
+    showMessage("myCoursesMessage","Vérification de la connexion et de la session...");
+    const authResult=await withTimeout(sb.auth.getSession(),"La session Supabase ne répond pas",12000);
+    const {data:{session}={},error}=authResult||{};
+    if(error)throw error;
+    if(!session){location.href="index.html";return;}
+    currentUser=session.user;
+    const profileName=currentUser.user_metadata?.full_name||currentUser.user_metadata?.name||currentUser.email||"Apprenant";
+    document.getElementById("learnerName").textContent=profileName.split(" ")[0];
+    document.getElementById("profileName").textContent=profileName;
+    document.getElementById("profileEmail").textContent=currentUser.email||"";
+    renderTutorAvatar();
+    showMessage("myCoursesMessage","Session détectée. Chargement de vos formations...");
+    await withTimeout(loadMyCourses(),"Chargement des formations",15000);
+    await withTimeout(loadCatalog(),"Chargement du catalogue",15000);
+    await withTimeout(loadPendingPayments(),"Chargement des paiements",15000);
+  }catch(error){
+    const message="Diagnostic : "+(error.message||String(error));
+    document.getElementById("profileName").textContent="Connexion indisponible";
+    document.getElementById("profileEmail").textContent=message;
+    showMessage("myCoursesMessage",message,"error");
+    showMessage("catalogMessage","Le catalogue n'a pas pu être chargé : "+message,"error");
+  }
+}
+
+document.getElementById("logoutBtn").addEventListener("click",async()=>{await sb.auth.signOut();location.href="index.html";});
+document.getElementById("backButton").addEventListener("click",()=>setVisibleSections({courses:true}));
+document.getElementById("backToModules").addEventListener("click",returnToModules);
+document.getElementById("hqSend").addEventListener("click",sendHumanQuestion);
+document.getElementById("tutorExplain").addEventListener("click",tutorExplain);
+document.getElementById("tutorVoice").addEventListener("click",()=>{if("speechSynthesis" in window){speechSynthesis.cancel();tutorSpeak(document.getElementById("malikMessages").textContent);}});
+document.getElementById("tutorStop").addEventListener("click",()=>{if("speechSynthesis" in window)speechSynthesis.cancel();document.getElementById("tutorAvatar").classList.remove("speaking");});
+document.getElementById("malikSend").addEventListener("click",()=>{const box=document.getElementById("malikQuestion");tutorAnswer(box.value);box.value="";});
+document.getElementById("malikMic").addEventListener("click",startMic);
+initializeDashboard();
+</script>
+</body>
+</html>
