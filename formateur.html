@@ -89,6 +89,27 @@ a.join{display:inline-block;background:#66834b;color:#fff;text-decoration:none;p
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');}
+</script>
+<script>
+if(!window.supabase){
+  (function(){
+    var fail={data:null,error:{message:"Connexion au serveur impossible. Vérifiez votre réseau puis réessayez."}};
+    var wait=function(){return new Promise(function(){});};
+    var chain=function(){var f=function(){return p;};var p=new Proxy(f,{get:function(t,k){return k==="then"?function(res){res(fail);}:p;},apply:function(){return p;}});return p;};
+    window.supabase={createClient:function(){return{auth:{getSession:wait,getUser:wait,onAuthStateChange:function(){return{data:{subscription:{unsubscribe:function(){}}}};},signOut:wait},from:chain,rpc:chain,functions:{invoke:function(){return Promise.resolve(fail);}},storage:{from:chain}};}};
+    document.addEventListener("DOMContentLoaded",function(){
+      var d=document.createElement("div");
+      d.style.cssText="position:sticky;top:0;z-index:99;background:#fce8e6;color:#8b2118;padding:12px 16px;font:14px Arial,sans-serif";
+      d.textContent="Connexion au serveur impossible (réseau lent ou bloqué). ";
+      var b=document.createElement("button");b.textContent="Réessayer";b.style.marginLeft="8px";
+      b.onclick=function(){location.reload();};
+      d.appendChild(b);document.body.insertBefore(d,document.body.firstChild);
+    });
+  })();
+}
+</script>
+<script>
 const SUPABASE_URL="https://uhrmfqsrxnmrdfiwcazm.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_KumzgRkeVpfJZOgJ5vOfgw_cfcN7A7A";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
